@@ -2,6 +2,7 @@ import pandas as pd
 import yfinance as yf
 import numpy as np
 import requests_cache
+from matplotlib import pyplot as plt
 
 # https://www.youtube.com/watch?v=bUejGzheCac
 
@@ -50,7 +51,7 @@ def pf_performance(date):
 
 print(pf_performance('2010-12-31'))
 
-returns = [];
+returns = []
 for date in mtl.index[:-1]:
     returns.append(pf_performance(date))
 
@@ -58,5 +59,6 @@ print(returns)
 
 returns_series = pd.Series(returns, index=mtl.index[1:])
 
-returns_series.cumprod().plot()
-print(returns_series)
+frame = returns_series.cumprod()
+plt.plot(frame)
+plt.show()
