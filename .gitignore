@@ -2,6 +2,7 @@ http_cache
 *.xlsx
 _secrets.py
 .idea
+cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
