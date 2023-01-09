@@ -1,6 +1,7 @@
 http_cache
 *.xlsx
-algorithmic-trading-python-tutorial/algorithmic-trading-python-tutorial/_secrets.py
+_secrets.py
+.idea
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
