@@ -1,6 +1,7 @@
 http_cache
 *.xlsx
 _secrets.py
+_secrets_.py
 .idea
 cache
 
