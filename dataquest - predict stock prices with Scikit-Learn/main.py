@@ -91,6 +91,7 @@ def backtest(data, model, predictors, train_size, test_size=1):
             predictions = result[:, 1]
             predictions = pd.Series(predictions, index=test.index)
         else:
+            # hack - need to see exactly why this happens
             predictions = pd.Series([0], index=test.index)
         # convert the probabilities to simple buy=1 signals
         predictions[predictions > threshold] = 1
@@ -103,7 +104,7 @@ def backtest(data, model, predictors, train_size, test_size=1):
     return pd.concat(all_preds)
 
 
-final_predictions = backtest(data.iloc[-(500 * 1):], model, full_predictors, 3, 1)
+final_predictions = backtest(data.iloc[-(5000 * 1):], model, full_predictors, 3, 1)
 print('value counts for predictions:')
 print(final_predictions["Predictions"].value_counts())
 
