@@ -11,38 +11,45 @@ msft = yf.Ticker(symbol)
 msft_hist = msft.history(period="max")
 
 data = msft_hist[['Close']]
-data = data.rename(columns={'Close': 'Actual_Close'})
+data = data.rename(columns={'Close': 'T-0_Close'})
 # 'price_up_flag' will be a 1 if the close price was greater than the previous close price, 0 otherwise
-data['price_up_flag'] = msft_hist.rolling(2).apply(lambda x: x.iloc[1] > x.iloc[0])['Close']
-data['daily_return'] = msft_hist.rolling(2).apply(lambda x: x.iloc[1] / x.iloc[0])['Close']
+data['T-0_price_up_flag'] = msft_hist.rolling(2).apply(lambda x: x.iloc[1] > x.iloc[0])['Close']
+data['T-0_daily_return'] = msft_hist.rolling(2).apply(lambda x: x.iloc[1] / x.iloc[0])['Close']
 data.dropna(inplace=True)
 print(data.head(5))
-data['ln_daily_return'] = np.log(data["daily_return"])
+data['ln_daily_return'] = np.log(data["T-0_daily_return"])
 print(data.head(5))
 
 # Target is any row that has seen a 'large' one-day price increase
-data['Target'] = (data['daily_return'] > 1.005).astype(int)
+data['Target'] = (data['T-0_daily_return'] > 1.005).astype(int)
 print(data.head(5))
 
 msft_prev = msft_hist.copy()
 msft_prev = msft_prev.shift(1)
+msft_prev.rename(columns={
+    "Close": "T-1_Close",
+    "High": "T-1_High",
+    "Low": "T-1_Low",
+    "Open": "T-1_Open",
+    "Volume": "T-1_Volume"
+}, inplace=True)
+print(msft_prev.head(5))
 
-predictors = ['Close', "High", "Low", "Open", "Volume"]
+predictors = ["T-1_Close", "T-1_High", "T-1_Low", "T-1_Open", "T-1_Volume"]
 
-data = data.join(msft_prev[predictors]).iloc[1:]
+shifted_input_data = msft_prev[predictors]
+data = data.join(shifted_input_data).iloc[1:]
 # we dropped the first row above because there is no prior day
 print(data.tail(5))
 
 # create some synthetic columns
-data["weekly_trend"] = data.shift(1).rolling(5).mean()["price_up_flag"]
+data["weekly_trend"] = data.shift(1).rolling(5).mean()["T-0_price_up_flag"]
 data["weekly_ret"] = data.shift(1).rolling(5).sum()["ln_daily_return"]
 
 data.dropna(inplace=True)
 
 full_predictors = predictors + [
     "weekly_trend",
-    "price_up_flag",
-    "daily_return",
     "weekly_ret"
 ]
 
@@ -105,7 +112,7 @@ def backtest(data, model, predictor_cols, train_size, test_size=1):
 
 model = RandomForestClassifier(n_estimators=25, min_samples_split=3, random_state=1)
 
-final_predictions = backtest(data.iloc[-(500 * 1):], model, full_predictors, 25, 1)
+final_predictions = backtest(data.iloc[-(500 * 1):], model, full_predictors, 10, 1)
 print('value counts for predictions:')
 print(final_predictions["Predictions"].value_counts())
 
