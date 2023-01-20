@@ -7,8 +7,15 @@ import pandas as pd
 import numpy as np
 
 symbol = "MSFT"
-msft = yf.Ticker(symbol)
-msft_hist = msft.history(period="max")
+filename = f'data/{symbol}_hist.pkl'
+
+try:
+    msft_hist = pd.read_pickle(filename)
+    print(f'using cached {symbol} historical data from: {filename}')
+except:
+    msft = yf.Ticker(symbol)
+    msft_hist = msft.history(period="max")
+    msft_hist.to_pickle(filename)
 
 data = msft_hist[['Close']]
 data = data.rename(columns={'Close': 'T-0_Close'})
@@ -17,7 +24,7 @@ data['T-0_price_up_flag'] = msft_hist.rolling(2).apply(lambda x: x.iloc[1] > x.i
 data['T-0_daily_return'] = msft_hist.rolling(2).apply(lambda x: x.iloc[1] / x.iloc[0])['Close']
 data.dropna(inplace=True)
 print(data.head(5))
-data['ln_daily_return'] = np.log(data["T-0_daily_return"])
+data['T-0_log_daily_return'] = np.log(data["T-0_daily_return"])
 print(data.head(5))
 
 # Target is any row that has seen a 'large' one-day price increase
@@ -44,7 +51,7 @@ print(data.tail(5))
 
 # create some synthetic columns
 data["weekly_trend"] = data.shift(1).rolling(5).mean()["T-0_price_up_flag"]
-data["weekly_ret"] = data.shift(1).rolling(5).sum()["ln_daily_return"]
+data["weekly_ret"] = data.shift(1).rolling(5).sum()["T-0_log_daily_return"]
 
 data.dropna(inplace=True)
 
@@ -52,6 +59,7 @@ full_predictors = predictors + [
     "weekly_trend",
     "weekly_ret"
 ]
+
 
 def backtest(data, model, predictor_cols, train_size, test_size=1):
     all_preds = []
@@ -111,8 +119,10 @@ def backtest(data, model, predictor_cols, train_size, test_size=1):
 
 
 model = RandomForestClassifier(n_estimators=25, min_samples_split=3, random_state=1)
-
-final_predictions = backtest(data.iloc[-(500 * 1):], model, full_predictors, 10, 1)
+# 60=41%
+# 50=43%
+# 100=45%
+final_predictions = backtest(data.iloc[-(500 * 1):], model, full_predictors, 100, 1)
 print('value counts for predictions:')
 print(final_predictions["Predictions"].value_counts())
 
