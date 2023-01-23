@@ -47,7 +47,7 @@ print(full_predictors)
 
 def backtest(data, model, predictor_cols, train_size, test_size=1):
     all_preds = []
-    threshold = .6
+    threshold = .55
     row_count = data.shape[0]
 
     # print(f'row_count: {row_count}, train_size: {train_size}, test_size: {test_size}')
@@ -75,7 +75,9 @@ def backtest(data, model, predictor_cols, train_size, test_size=1):
         # print(f'testing...')
         # print(f'result: ${result}')
         # just use the 2nd column
+
         if result.shape[1] == 2:
+            # this is the 'normal' execution path
             predictions = result[:, 1]
             predictions = pd.Series(predictions, index=test.index)
         else:
