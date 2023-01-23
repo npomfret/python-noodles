@@ -1,10 +1,10 @@
-import math
-
+import env
 import yfinance as yf
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score
 import pandas as pd
 import numpy as np
+from fracdiff.sklearn import FracdiffStat
 
 symbol = "MSFT"
 filename = f'data/{symbol}_hist.pkl'
@@ -17,48 +17,32 @@ except:
     msft_hist = msft.history(period="max")
     msft_hist.to_pickle(filename)
 
+print(msft_hist.head(5))
+
 data = msft_hist[['Close']]
-data = data.rename(columns={'Close': 'T-0_Close'})
-# 'price_up_flag' will be a 1 if the close price was greater than the previous close price, 0 otherwise
-data['T-0_price_up_flag'] = msft_hist.rolling(2).apply(lambda x: x.iloc[1] > x.iloc[0])['Close']
-data['T-0_daily_return'] = msft_hist.rolling(2).apply(lambda x: x.iloc[1] / x.iloc[0])['Close']
-data.dropna(inplace=True)
+data = data.rename(columns={'Close': 'prev_Close'})
+data['prev_daily_return_partial'] = FracdiffStat().fit_transform(data)
+data['prev_pct_change'] = data['prev_Close'].pct_change()
+data['prev_log_change'] = np.log(data['prev_pct_change'] + 1)
+
+data = data.shift(1)
+data = data.join(msft_hist[['Close']])
+data = data.rename(columns={'Close': 'actual_Close'})
 print(data.head(5))
-data['T-0_log_daily_return'] = np.log(data["T-0_daily_return"])
-print(data.head(5))
-
-# Target is any row that has seen a 'large' one-day price increase
-data['Target'] = (data['T-0_daily_return'] > 1.005).astype(int)
-print(data.head(5))
-
-msft_prev = msft_hist.copy()
-msft_prev = msft_prev.shift(1)
-msft_prev.rename(columns={
-    "Close": "T-1_Close",
-    "High": "T-1_High",
-    "Low": "T-1_Low",
-    "Open": "T-1_Open",
-    "Volume": "T-1_Volume"
-}, inplace=True)
-print(msft_prev.head(5))
-
-predictors = ["T-1_Close", "T-1_High", "T-1_Low", "T-1_Open", "T-1_Volume"]
-
-shifted_input_data = msft_prev[predictors]
-data = data.join(shifted_input_data).iloc[1:]
-# we dropped the first row above because there is no prior day
-print(data.tail(5))
-
-# create some synthetic columns
-data["weekly_trend"] = data.shift(1).rolling(5).mean()["T-0_price_up_flag"]
-data["weekly_ret"] = data.shift(1).rolling(5).sum()["T-0_log_daily_return"]
 
 data.dropna(inplace=True)
+data['actual_daily_return'] = data['actual_Close'] / data['prev_Close']
+data['Target'] = (data['actual_daily_return'] > 1.005).astype(int)
+print(data.head(10))
 
-full_predictors = predictors + [
-    "weekly_trend",
-    "weekly_ret"
+full_predictors = [
+    "prev_Close",
+    "prev_daily_return_partial",
+    # "prev_log_change",
+    # "prev_pct_change",
 ]
+
+print(full_predictors)
 
 
 def backtest(data, model, predictor_cols, train_size, test_size=1):
@@ -119,10 +103,7 @@ def backtest(data, model, predictor_cols, train_size, test_size=1):
 
 
 model = RandomForestClassifier(n_estimators=25, min_samples_split=3, random_state=1)
-# 60=41%
-# 50=43%
-# 100=45%
-final_predictions = backtest(data.iloc[-(500 * 1):], model, full_predictors, 100, 1)
+final_predictions = backtest(data.iloc[-(1000 * 1):], model, full_predictors, 200, 5)
 print('value counts for predictions:')
 print(final_predictions["Predictions"].value_counts())
 
