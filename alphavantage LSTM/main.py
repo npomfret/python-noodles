@@ -18,15 +18,6 @@ config = {
         "window_size": 20,
         "train_split_size": 0.80,
     },
-    "plots": {
-        "xticks_interval": 90,  # show a date every 90 days
-        "color_actual": "#001f3f",
-        "color_train": "#3D9970",
-        "color_val": "#0074D9",
-        "color_pred_train": "#3D9970",
-        "color_pred_val": "#0074D9",
-        "color_pred_test": "#FF4136",
-    },
     "model": {
         "input_size": 1,  # since we are only using 1 feature, close price
         "num_lstm_layers": 2,
@@ -60,9 +51,7 @@ num_data_points = len(data_date)
 display_date_range = "from " + data_date[0] + " to " + data_date[num_data_points - 1]
 print("Number data points", num_data_points, display_date_range)
 
-ticks_interval = config["plots"]["xticks_interval"]
-
-plot_raw_prices(data_date, data_close_price, config, ticks_interval, num_data_points, symbol, display_date_range)
+plot_raw_prices(data_date, data_close_price, symbol)
 
 
 class Normalizer():
@@ -132,7 +121,7 @@ data_x_val = data_x[split_index:]
 data_y_train = data_y[:split_index]
 data_y_val = data_y[split_index:]
 
-plot_train_vs_test(num_data_points, window_size, split_index, scaler, data_y_train, data_y_val, data_date, config, ticks_interval, symbol)
+plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_val, data_date, symbol)
 
 
 class TimeSeriesDataset(Dataset):
@@ -278,9 +267,9 @@ for idx, (x, y) in enumerate(val_dataloader):
     out = out.cpu().detach().numpy()
     predicted_val = np.concatenate((predicted_val, out))
 
-plot_predictions_vs_actual(num_data_points, window_size, split_index, scaler, predicted_train, predicted_val, data_date, data_close_price, config, ticks_interval)
+plot_predictions_vs_actual(num_data_points, window_size, split_index, scaler, predicted_train, predicted_val, data_date, data_close_price)
 
-plot_predictions_vs_actual_zoomed(scaler, data_y_val, predicted_val, data_date, split_index, window_size, config, ticks_interval)
+plot_predictions_vs_actual_zoomed(scaler, data_y_val, predicted_val, data_date, split_index, window_size)
 
 # predict the closing price of the next trading day
 
@@ -290,5 +279,4 @@ x = torch.tensor(data_x_unseen).float().to(config["training"]["device"]).unsquee
 prediction = model(x)
 prediction = prediction.cpu().detach().numpy()
 
-plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, data_date, config)
-
+plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, data_date)
