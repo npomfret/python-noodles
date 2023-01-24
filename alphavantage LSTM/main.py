@@ -1,6 +1,5 @@
 import torch
-from torch.utils.data import DataLoader
-from market_data import download_price_history, create_windowed_data, create_output_array, Normalizer, TimeSeriesDataset
+from market_data import download_price_history
 from model import LSTMModel, LSTMModelDefinition
 from plots import plot_predict_unseen, plot_train_vs_test, plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed
 
@@ -29,36 +28,22 @@ split_ratio = config["data"]["train_split_size"]
 window_size = config["data"]["window_size"]
 
 # normalize
-scaler = Normalizer()
-normalized_prices = scaler.fit_transform(price_history.prices)
-
-data_x, data_x_unseen = create_windowed_data(normalized_prices, window_size)
-data_y = create_output_array(normalized_prices, window_size=window_size)
-
-if len(data_x) != len(data_y):
-    raise ValueError('x and y are not same length')
-
-# split dataset, early stuff for training, later stuff for testing
-
-split_index = int(data_y.shape[0] * split_ratio)
-data_x_train = data_x[:split_index]
-data_x_test = data_x[split_index:]
-data_y_train = data_y[:split_index]
-data_y_test = data_y[split_index:]
+lstm_data = price_history.to_lstm_data(split_ratio, window_size)
+split_index = lstm_data.split_index
+data_x_train = lstm_data.data_x_train
+data_x_test = lstm_data.data_x_test
+data_y_train = lstm_data.data_y_train
+data_y_test = lstm_data.data_y_test
+scaler = lstm_data.scaler
 
 plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_test, price_history)
 
-dataset_train = TimeSeriesDataset(data_x_train, data_y_train)
-dataset_test = TimeSeriesDataset(data_x_test, data_y_test)
-
-print(f'Train data shape, x: {dataset_train.x.shape}, y: {dataset_train.y.shape}')
-print(f'Testing data shape, x: {dataset_test.x.shape}, y: {dataset_test.y.shape}')
-
 batch_size = config["training"]["batch_size"]
-hw_device = config["training"]["device"]
 
-training_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
-testing_dataloader = DataLoader(dataset_test, batch_size=batch_size, shuffle=True)
+training_dataloader = lstm_data.training_dataloader(batch_size)
+testing_dataloader = lstm_data.testing_dataloader(batch_size)
+
+hw_device = config["training"]["device"]
 
 model = LSTMModel(
     LSTMModelDefinition(output_size=1),
@@ -74,8 +59,8 @@ model.learn(
 )
 
 # here we re-initialize dataloader so the data isn't shuffled, so we can plot the values by date
-training_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=False)
-testing_dataloader = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
+training_dataloader = lstm_data.training_dataloader(batch_size, shuffle=False)
+testing_dataloader = lstm_data.testing_dataloader(batch_size, shuffle=False)
 
 predicted_train = model.make_predictions(training_dataloader)
 predicted_test = model.make_predictions(testing_dataloader)
@@ -86,7 +71,7 @@ plot_predictions_vs_actual_zoomed(scaler, data_y_test, predicted_test, price_his
 
 # predict the closing price of the next trading day
 
-x = torch.tensor(data_x_unseen).float().to(hw_device).unsqueeze(0).unsqueeze(2)  # this is the data type and shape required, [batch, sequence, feature]
+x = torch.tensor(lstm_data.data_x_unseen).float().to(hw_device).unsqueeze(0).unsqueeze(2)  # this is the data type and shape required, [batch, sequence, feature]
 prediction = model.make_prediction(x)
 prediction = prediction.cpu().detach().numpy()
 

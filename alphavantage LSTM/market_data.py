@@ -1,7 +1,7 @@
 import numpy as np
 from alpha_vantage.timeseries import TimeSeries
 from torch.utils.data import Dataset
-
+from torch.utils.data import DataLoader
 from plots import plot_raw_prices
 
 CONFIG = {
@@ -30,6 +30,25 @@ def download_price_history(symbol):
     return PriceHistory(symbol, dates, adjusted_close_prices)
 
 
+class LSTMData:
+    def __init__(self, split_index, data_x_train, data_x_test, data_y_train, data_y_test, scaler, data_x_unseen):
+        self.split_index = split_index
+        self.data_x_train = data_x_train
+        self.data_x_test = data_x_test
+        self.data_y_train = data_y_train
+        self.data_y_test = data_y_test
+        self.scaler = scaler
+        self.data_x_unseen = data_x_unseen
+
+    def training_dataloader(self, batch_size, shuffle=True):
+        dataset = TimeSeriesDataset(self.data_x_train, self.data_y_train)
+        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+
+    def testing_dataloader(self, batch_size, shuffle=True):
+        dataset = TimeSeriesDataset(self.data_x_test, self.data_y_test)
+        return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+
+
 class PriceHistory:
     def __init__(self, symbol, dates, prices):
         self.symbol = symbol
@@ -47,6 +66,33 @@ class PriceHistory:
 
     def plot(self):
         plot_raw_prices(self.dates, self.prices, self.symbol)
+
+    def to_lstm_data(self, split_ratio, window_size):
+        scaler = Normalizer()
+        normalized_prices = scaler.fit_transform(self.prices)
+
+        data_x, data_x_unseen = create_windowed_data(normalized_prices, window_size)
+        data_y = create_output_array(normalized_prices, window_size=window_size)
+
+        if len(data_x) != len(data_y):
+            raise ValueError('x and y are not same length')
+
+        # split dataset, early stuff for training, later stuff for testing
+
+        split_index = int(data_y.shape[0] * split_ratio)
+
+        data_x_train = data_x[:split_index]
+        data_x_test = data_x[split_index:]
+        data_y_train = data_y[:split_index]
+        data_y_test = data_y[split_index:]
+
+        dataset_train = TimeSeriesDataset(data_x_train, data_y_train)
+        dataset_test = TimeSeriesDataset(data_x_test, data_y_test)
+
+        print(f'Train data shape, x: {dataset_train.x.shape}, y: {dataset_train.y.shape}')
+        print(f'Testing data shape, x: {dataset_test.x.shape}, y: {dataset_test.y.shape}')
+
+        return LSTMData(split_index, data_x_train, data_x_test, data_y_train, data_y_test, scaler, data_x_unseen)
 
 
 def create_windowed_data(x, window_size):
@@ -117,4 +163,3 @@ class TimeSeriesDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.x[idx], self.y[idx]
-
