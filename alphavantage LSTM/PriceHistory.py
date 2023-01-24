@@ -68,7 +68,7 @@ class PriceHistory:
         return self.dates[-1]
 
     def plot(self):
-        plot_raw_prices(self.dates, self.prices, self.symbol)
+        plot_raw_prices(self)
 
     def to_lstm_data(self, split_ratio, window_size):
         scaler = Normalizer()

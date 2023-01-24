@@ -14,26 +14,32 @@ CONFIG = {
 }
 
 
-def plot_raw_prices(data_date, data_close_price, symbol):
-    ticks_interval = CONFIG["xticks_interval"]
+def plot_raw_prices(price_history):
+    dates = price_history.dates
+
     color = CONFIG["color_actual"]
 
-    num_data_points = len(data_date)
-    display_date_range = "from " + data_date[0] + " to " + data_date[num_data_points - 1]
+    num_data_points = len(dates)
+    display_date_range = "from " + dates[0] + " to " + dates[num_data_points - 1]
 
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
-    plt.plot(data_date, data_close_price, color=color)
-    xticks = [data_date[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
+    plt.plot(dates, price_history.prices, color=color)
+
+    title = "Daily close price for " + price_history.symbol + ", " + display_date_range
+
+    ticks_interval = CONFIG["xticks_interval"]
+    xticks = [dates[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
+
     x = np.arange(0, len(xticks))
     plt.xticks(x, xticks, rotation='vertical')
-    plt.title("Daily close price for " + symbol + ", " + display_date_range)
+    plt.title(title)
     plt.grid(b=None, which='major', axis='y', linestyle='--')
+    plt.legend()
     plt.show()
 
 
 def plot_train_vs_test(lstm_data, price_history):
-    ticks_interval = CONFIG["xticks_interval"]
 
     # prepare data for plotting
     to_plot_data_y_train = np.zeros(price_history.size())
@@ -50,10 +56,15 @@ def plot_train_vs_test(lstm_data, price_history):
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
     plt.plot(price_history.dates, to_plot_data_y_train, label="Prices (train)", color=CONFIG["color_train"])
     plt.plot(price_history.dates, to_plot_data_y_test, label="Prices (validation)", color=CONFIG["color_val"])
+
+    title = "Daily close prices for " + price_history.symbol + " - showing training and validation data"
+
+    ticks_interval = CONFIG["xticks_interval"]
     xticks = [price_history.dates[i] if ((i % ticks_interval == 0 and (price_history.size() - i) > ticks_interval) or i == price_history.size() - 1) else None for i in range(price_history.size())]  # make x ticks nice
+
     x = np.arange(0, len(xticks))
     plt.xticks(x, xticks, rotation='vertical')
-    plt.title("Daily close prices for " + price_history.symbol + " - showing training and validation data")
+    plt.title(title)
     plt.grid(b=None, which='major', axis='y', linestyle='--')
     plt.legend()
     plt.show()
@@ -61,7 +72,6 @@ def plot_train_vs_test(lstm_data, price_history):
 
 def plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price_history):
     # prepare data for plotting
-    ticks_interval = CONFIG["xticks_interval"]
 
     to_plot_data_y_train_pred = np.zeros(price_history.size())
     to_plot_data_y_val_pred = np.zeros(price_history.size())
@@ -77,10 +87,15 @@ def plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price
     plt.plot(price_history.dates, price_history.prices, label="Actual prices", color=CONFIG["color_actual"])
     plt.plot(price_history.dates, to_plot_data_y_train_pred, label="Predicted prices (train)", color=CONFIG["color_pred_train"])
     plt.plot(price_history.dates, to_plot_data_y_val_pred, label="Predicted prices (validation)", color=CONFIG["color_pred_val"])
-    plt.title("Compare predicted prices to actual prices")
+
+    title = "Compare predicted prices to actual prices"
+
+    ticks_interval = CONFIG["xticks_interval"]
     xticks = [price_history.dates[i] if ((i % ticks_interval == 0 and (price_history.size() - i) > ticks_interval) or i == price_history.size() - 1) else None for i in range(price_history.size())]  # make x ticks nice
+
     x = np.arange(0, len(xticks))
     plt.xticks(x, xticks, rotation='vertical')
+    plt.title(title)
     plt.grid(b=None, which='major', axis='y', linestyle='--')
     plt.legend()
     plt.show()
@@ -99,10 +114,13 @@ def plot_predictions_vs_actual_zoomed(lstm_data, predicted_val, dates):
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
     plt.plot(to_plot_data_date, to_plot_data_y_val_subset, label="Actual prices", color=CONFIG["color_actual"])
     plt.plot(to_plot_data_date, to_plot_predicted_val, label="Predicted prices (validation)", color=CONFIG["color_pred_val"])
-    plt.title("Zoom in to examine predicted price on validation data portion")
     xticks = [to_plot_data_date[i] if ((i % int(ticks_interval / 5) == 0 and (len(to_plot_data_date) - i) > ticks_interval / 6) or i == len(to_plot_data_date) - 1) else None for i in range(len(to_plot_data_date))]  # make x ticks nice
-    xs = np.arange(0, len(xticks))
-    plt.xticks(xs, xticks, rotation='vertical')
+
+    title = "Zoom in to examine predicted price on validation data portion"
+
+    x = np.arange(0, len(xticks))
+    plt.xticks(x, xticks, rotation='vertical')
+    plt.title(title)
     plt.grid(b=None, which='major', axis='y', linestyle='--')
     plt.legend()
     plt.show()
