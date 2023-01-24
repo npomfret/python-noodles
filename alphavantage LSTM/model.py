@@ -1,6 +1,47 @@
+import numpy as np
 from torch import nn as nn
+from torch.utils.data import Dataset
 
-CONFIG = {
+
+class Normalizer:
+    def __init__(self):
+        self.mu = None
+        self.sd = None
+
+    def fit_transform(self, x):
+        self.mu = np.mean(x, axis=0, keepdims=True)
+        self.sd = np.std(x, axis=0, keepdims=True)
+        normalized_x = (x - self.mu) / self.sd
+        return normalized_x
+
+    def inverse_transform(self, x):
+        return (x * self.sd) + self.mu
+
+
+class TimeSeriesDataset(Dataset):
+    def __init__(self, x, y):
+        number_of_features = 1
+        number_of_samples = len(x)
+        if number_of_samples != len(y):
+            raise ValueError('x and y are not same length')
+        number_of_time_steps = len(x[0])
+
+        # in our case, we have only 1 feature, so we need to convert `x` into [n_samples, n_steps, n_features] for LSTM
+        x = np.expand_dims(x, 2)
+        if x.shape != (number_of_samples, number_of_time_steps, number_of_features):
+            raise ValueError('x is wrong shape for LSTM')
+
+        self.x = x.astype(np.float32)
+        self.y = y.astype(np.float32)
+
+    def __len__(self):
+        return len(self.x)
+
+    def __getitem__(self, idx):
+        return self.x[idx], self.y[idx]
+
+
+LSTM_CONFIG = {
     "input_size": 1,  # since we are only using 1 feature, close price
     "num_lstm_layers": 2,
     "lstm_size": 32,
@@ -12,10 +53,10 @@ class LSTMModel(nn.Module):
     def __init__(self, output_size=1):
         super().__init__()
 
-        input_size = CONFIG["input_size"]
-        hidden_layer_size = CONFIG["lstm_size"]
-        num_layers = CONFIG["num_lstm_layers"]
-        dropout = CONFIG["dropout"]
+        input_size = LSTM_CONFIG["input_size"]
+        hidden_layer_size = LSTM_CONFIG["lstm_size"]
+        num_layers = LSTM_CONFIG["num_lstm_layers"]
+        dropout = LSTM_CONFIG["dropout"]
 
         self.hidden_layer_size = hidden_layer_size
 
