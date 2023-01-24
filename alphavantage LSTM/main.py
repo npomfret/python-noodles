@@ -29,20 +29,9 @@ window_size = config["data"]["window_size"]
 
 # normalize
 lstm_data = price_history.to_lstm_data(split_ratio, window_size)
-split_index = lstm_data.split_index
-data_x_train = lstm_data.data_x_train
-data_x_test = lstm_data.data_x_test
-data_y_train = lstm_data.data_y_train
-data_y_test = lstm_data.data_y_test
-scaler = lstm_data.scaler
-
-plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_test, price_history)
+lstm_data.plot(price_history)
 
 batch_size = config["training"]["batch_size"]
-
-training_dataloader = lstm_data.training_dataloader(batch_size)
-testing_dataloader = lstm_data.testing_dataloader(batch_size)
-
 hw_device = config["training"]["device"]
 
 model = LSTMModel(
@@ -54,8 +43,8 @@ model = LSTMModel(
 
 model.learn(
     config["training"]["num_epoch"],
-    training_dataloader,
-    testing_dataloader
+    lstm_data.training_dataloader(batch_size),
+    lstm_data.testing_dataloader(batch_size)
 )
 
 # here we re-initialize dataloader so the data isn't shuffled, so we can plot the values by date
@@ -65,9 +54,9 @@ testing_dataloader = lstm_data.testing_dataloader(batch_size, shuffle=False)
 predicted_train = model.make_predictions(training_dataloader)
 predicted_test = model.make_predictions(testing_dataloader)
 
-plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_test, price_history)
+plot_predictions_vs_actual(window_size, lstm_data.split_index, lstm_data.scaler, predicted_train, predicted_test, price_history)
 
-plot_predictions_vs_actual_zoomed(scaler, data_y_test, predicted_test, price_history.dates, split_index, window_size)
+plot_predictions_vs_actual_zoomed(lstm_data.scaler, lstm_data.data_y_test, predicted_test, price_history.dates, lstm_data.split_index, window_size)
 
 # predict the closing price of the next trading day
 
@@ -75,4 +64,4 @@ x = torch.tensor(lstm_data.data_x_unseen).float().to(hw_device).unsqueeze(0).uns
 prediction = model.make_prediction(x)
 prediction = prediction.cpu().detach().numpy()
 
-plot_predict_unseen(scaler, data_y_test, predicted_test, prediction, price_history.dates)
+plot_predict_unseen(lstm_data.scaler, lstm_data.data_y_test, predicted_test, prediction, price_history.dates)
