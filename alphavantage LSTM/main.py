@@ -41,17 +41,17 @@ if len(data_x) != len(data_y):
 
 split_index = int(data_y.shape[0] * config["data"]["train_split_size"])
 data_x_train = data_x[:split_index]
-data_x_val = data_x[split_index:]
+data_x_test = data_x[split_index:]
 data_y_train = data_y[:split_index]
-data_y_val = data_y[split_index:]
+data_y_test = data_y[split_index:]
 
-plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_val, dates, symbol)
+plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_test, dates, symbol)
 
 dataset_train = TimeSeriesDataset(data_x_train, data_y_train)
-dataset_val = TimeSeriesDataset(data_x_val, data_y_val)
+dataset_test = TimeSeriesDataset(data_x_test, data_y_test)
 
 print(f'Train data shape, x: {dataset_train.x.shape}, y: {dataset_train.y.shape}')
-print(f'Validation data shape, x: {dataset_val.x.shape}, y: {dataset_val.y.shape}')
+print(f'Testing data shape, x: {dataset_test.x.shape}, y: {dataset_test.y.shape}')
 
 batch_size = config["training"]["batch_size"]
 hw_device = config["training"]["device"]
@@ -87,55 +87,61 @@ def run_epoch(dataloader, is_training=False):
     return epoch_loss, learning_rate
 
 
-train_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
-val_dataloader = DataLoader(dataset_val, batch_size=batch_size, shuffle=True)
+training_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
+testing_dataloader = DataLoader(dataset_test, batch_size=batch_size, shuffle=True)
 
 model = LSTMModel(output_size=1)
 model = model.to(hw_device)
 
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=config["training"]["learning_rate"], betas=(0.9, 0.98), eps=1e-9)
-scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=config["training"]["scheduler_step_size"], gamma=0.1)
+optimizer = optim.Adam(
+    model.parameters(),
+    lr=config["training"]["learning_rate"],
+    betas=(0.9, 0.98),
+    eps=1e-9
+)
+scheduler = optim.lr_scheduler.StepLR(
+    optimizer,
+    step_size=config["training"]["scheduler_step_size"],
+    gamma=0.1
+)
 
 number_of_epochs = config["training"]["num_epoch"]
 
 for epoch in range(number_of_epochs):
-    loss_train, lr_train = run_epoch(train_dataloader, is_training=True)
-    loss_val, lr_val = run_epoch(val_dataloader)
+    loss_train, lr_train = run_epoch(training_dataloader, is_training=True)
+    loss_test, lr_test = run_epoch(testing_dataloader)
     scheduler.step()
 
-    print(f'Epoch[{epoch + 1}/{number_of_epochs}] | loss train:{loss_train:.6f}, validation:{loss_val:.6f} | lr:{lr_train:.6f}]')
+    print(f'Epoch[{epoch + 1}/{number_of_epochs}], training loss:{loss_train:.6f}, testing loss:{loss_test:.6f}, lr:{lr_train:.6f}]')
 
 # here we re-initialize dataloader so the data isn't shuffled, so we can plot the values by date
 
-train_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=False)
-val_dataloader = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
+training_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=False)
+testing_dataloader = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
 
+# Set the module in evaluation mode
 model.eval()
 
-# predict on the training data, to see how well the model managed to learn and memorize
 
-predicted_train = np.array([])
+def make_predictions(data_loader):
+    res = np.array([])
 
-for idx, (x, y) in enumerate(train_dataloader):
-    x = x.to(hw_device)
-    out = model(x)
-    out = out.cpu().detach().numpy()
-    predicted_train = np.concatenate((predicted_train, out))
+    for idx, (x, y) in enumerate(data_loader):
+        x = x.to(hw_device)
+        out = model(x)
+        out = out.cpu().detach().numpy()
+        res = np.concatenate((res, out))
 
-# predict on the validation data, to see how the model does
+    return res
 
-predicted_val = np.array([])
 
-for idx, (x, y) in enumerate(val_dataloader):
-    x = x.to(hw_device)
-    out = model(x)
-    out = out.cpu().detach().numpy()
-    predicted_val = np.concatenate((predicted_val, out))
+predicted_train = make_predictions(training_dataloader)
+predicted_test = make_predictions(testing_dataloader)
 
-plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_val, dates, close_prices)
+plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_test, dates, close_prices)
 
-plot_predictions_vs_actual_zoomed(scaler, data_y_val, predicted_val, dates, split_index, window_size)
+plot_predictions_vs_actual_zoomed(scaler, data_y_test, predicted_test, dates, split_index, window_size)
 
 # predict the closing price of the next trading day
 
@@ -145,4 +151,4 @@ x = torch.tensor(data_x_unseen).float().to(hw_device).unsqueeze(0).unsqueeze(2) 
 prediction = model(x)
 prediction = prediction.cpu().detach().numpy()
 
-plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, dates)
+plot_predict_unseen(scaler, data_y_test, predicted_test, prediction, dates)
