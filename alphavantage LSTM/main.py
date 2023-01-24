@@ -49,36 +49,34 @@ config = {
     }
 }
 
+api_key = config["alpha_vantage"]["key"]
+symbol = config["alpha_vantage"]["symbol"]
+outputsize = config["alpha_vantage"]["outputsize"]
+ts = TimeSeries(key=api_key)
+data, meta_data = ts.get_daily_adjusted(symbol, outputsize=outputsize)
 
-def download_data(config):
-    ts = TimeSeries(key=config["alpha_vantage"]["key"])
-    data, meta_data = ts.get_daily_adjusted(config["alpha_vantage"]["symbol"], outputsize=config["alpha_vantage"]["outputsize"])
+data_date = [date for date in data.keys()]
+data_date.reverse()
 
-    data_date = [date for date in data.keys()]
-    data_date.reverse()
+close_col_name = config["alpha_vantage"]["key_adjusted_close"]
+data_close_price = [float(data[date][close_col_name]) for date in data.keys()]
+data_close_price.reverse()
+data_close_price = np.array(data_close_price)
 
-    data_close_price = [float(data[date][config["alpha_vantage"]["key_adjusted_close"]]) for date in data.keys()]
-    data_close_price.reverse()
-    data_close_price = np.array(data_close_price)
-
-    num_data_points = len(data_date)
-    display_date_range = "from " + data_date[0] + " to " + data_date[num_data_points - 1]
-    print("Number data points", num_data_points, display_date_range)
-
-    return data_date, data_close_price, num_data_points, display_date_range
-
-
-data_date, data_close_price, num_data_points, display_date_range = download_data(config)
+num_data_points = len(data_date)
+display_date_range = "from " + data_date[0] + " to " + data_date[num_data_points - 1]
+print("Number data points", num_data_points, display_date_range)
 
 # plot
 
 fig = figure(figsize=(25, 5), dpi=80)
 fig.patch.set_facecolor((1.0, 1.0, 1.0))
 plt.plot(data_date, data_close_price, color=config["plots"]["color_actual"])
-xticks = [data_date[i] if ((i % config["plots"]["xticks_interval"] == 0 and (num_data_points - i) > config["plots"]["xticks_interval"]) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
+ticks_interval = config["plots"]["xticks_interval"]
+xticks = [data_date[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
 x = np.arange(0, len(xticks))
 plt.xticks(x, xticks, rotation='vertical')
-plt.title("Daily close price for " + config["alpha_vantage"]["symbol"] + ", " + display_date_range)
+plt.title("Daily close price for " + symbol + ", " + display_date_range)
 plt.grid(b=None, which='major', axis='y', linestyle='--')
 plt.show()
 
@@ -104,23 +102,43 @@ normalized_data_close_price = scaler.fit_transform(data_close_price)
 
 
 def prepare_data_x(x, window_size):
-    # perform windowing
-    n_row = x.shape[0] - window_size + 1
-    output = np.lib.stride_tricks.as_strided(x, shape=(n_row, window_size), strides=(x.strides[0], x.strides[0]))
-    return output[:-1], output[-1]
+    number_of_observations = x.shape[0]
+    number_of_output_rows = number_of_observations - window_size + 1
+
+    # https://numpy.org/doc/stable/reference/generated/numpy.lib.stride_tricks.as_strided.html
+    windowed_data = np.lib.stride_tricks.as_strided(
+        x,
+        shape=(number_of_output_rows, window_size),
+        strides=(x.strides[0], x.strides[0]),
+        writeable=False
+    )
+
+    # 'output' is a 2D view of the 1D input array 'x',
+    # each entry is of width 'window_size' and is effectively a shifted copy of the previous entry
+    # [
+    #     [1,2,3,4,5],
+    #     [2,3,4,5,6],
+    #     [3,4,5,6,7],
+    #     ...
+
+    data = windowed_data[:-1]
+    row_with_no_tomorrow = windowed_data[-1]
+
+    return data, row_with_no_tomorrow
 
 
 def prepare_data_y(x, window_size):
-    # # perform simple moving average
-    # output = np.convolve(x, np.ones(window_size), 'valid') / window_size
-
     # use the next day as label
     output = x[window_size:]
     return output
 
 
-data_x, data_x_unseen = prepare_data_x(normalized_data_close_price, window_size=config["data"]["window_size"])
-data_y = prepare_data_y(normalized_data_close_price, window_size=config["data"]["window_size"])
+window_size = config["data"]["window_size"]
+data_x, data_x_unseen = prepare_data_x(normalized_data_close_price, window_size=window_size)
+data_y = prepare_data_y(normalized_data_close_price, window_size=window_size)
+
+if len(data_x) != len(data_y):
+    raise ValueError('x and y are not same length')
 
 # split dataset
 
@@ -135,8 +153,8 @@ data_y_val = data_y[split_index:]
 to_plot_data_y_train = np.zeros(num_data_points)
 to_plot_data_y_val = np.zeros(num_data_points)
 
-to_plot_data_y_train[config["data"]["window_size"]:split_index + config["data"]["window_size"]] = scaler.inverse_transform(data_y_train)
-to_plot_data_y_val[split_index + config["data"]["window_size"]:] = scaler.inverse_transform(data_y_val)
+to_plot_data_y_train[window_size:split_index + window_size] = scaler.inverse_transform(data_y_train)
+to_plot_data_y_val[split_index + window_size:] = scaler.inverse_transform(data_y_val)
 
 to_plot_data_y_train = np.where(to_plot_data_y_train == 0, None, to_plot_data_y_train)
 to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
@@ -147,10 +165,10 @@ fig = figure(figsize=(25, 5), dpi=80)
 fig.patch.set_facecolor((1.0, 1.0, 1.0))
 plt.plot(data_date, to_plot_data_y_train, label="Prices (train)", color=config["plots"]["color_train"])
 plt.plot(data_date, to_plot_data_y_val, label="Prices (validation)", color=config["plots"]["color_val"])
-xticks = [data_date[i] if ((i % config["plots"]["xticks_interval"] == 0 and (num_data_points - i) > config["plots"]["xticks_interval"]) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
+xticks = [data_date[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
 x = np.arange(0, len(xticks))
 plt.xticks(x, xticks, rotation='vertical')
-plt.title("Daily close prices for " + config["alpha_vantage"]["symbol"] + " - showing training and validation data")
+plt.title("Daily close prices for " + symbol + " - showing training and validation data")
 plt.grid(b=None, which='major', axis='y', linestyle='--')
 plt.legend()
 plt.show()
@@ -304,8 +322,8 @@ for idx, (x, y) in enumerate(val_dataloader):
 to_plot_data_y_train_pred = np.zeros(num_data_points)
 to_plot_data_y_val_pred = np.zeros(num_data_points)
 
-to_plot_data_y_train_pred[config["data"]["window_size"]:split_index + config["data"]["window_size"]] = scaler.inverse_transform(predicted_train)
-to_plot_data_y_val_pred[split_index + config["data"]["window_size"]:] = scaler.inverse_transform(predicted_val)
+to_plot_data_y_train_pred[window_size:split_index + window_size] = scaler.inverse_transform(predicted_train)
+to_plot_data_y_val_pred[split_index + window_size:] = scaler.inverse_transform(predicted_val)
 
 to_plot_data_y_train_pred = np.where(to_plot_data_y_train_pred == 0, None, to_plot_data_y_train_pred)
 to_plot_data_y_val_pred = np.where(to_plot_data_y_val_pred == 0, None, to_plot_data_y_val_pred)
@@ -318,7 +336,7 @@ plt.plot(data_date, data_close_price, label="Actual prices", color=config["plots
 plt.plot(data_date, to_plot_data_y_train_pred, label="Predicted prices (train)", color=config["plots"]["color_pred_train"])
 plt.plot(data_date, to_plot_data_y_val_pred, label="Predicted prices (validation)", color=config["plots"]["color_pred_val"])
 plt.title("Compare predicted prices to actual prices")
-xticks = [data_date[i] if ((i % config["plots"]["xticks_interval"] == 0 and (num_data_points - i) > config["plots"]["xticks_interval"]) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
+xticks = [data_date[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
 x = np.arange(0, len(xticks))
 plt.xticks(x, xticks, rotation='vertical')
 plt.grid(b=None, which='major', axis='y', linestyle='--')
@@ -329,7 +347,7 @@ plt.show()
 
 to_plot_data_y_val_subset = scaler.inverse_transform(data_y_val)
 to_plot_predicted_val = scaler.inverse_transform(predicted_val)
-to_plot_data_date = data_date[split_index + config["data"]["window_size"]:]
+to_plot_data_date = data_date[split_index + window_size:]
 
 # plots
 
@@ -338,7 +356,7 @@ fig.patch.set_facecolor((1.0, 1.0, 1.0))
 plt.plot(to_plot_data_date, to_plot_data_y_val_subset, label="Actual prices", color=config["plots"]["color_actual"])
 plt.plot(to_plot_data_date, to_plot_predicted_val, label="Predicted prices (validation)", color=config["plots"]["color_pred_val"])
 plt.title("Zoom in to examine predicted price on validation data portion")
-xticks = [to_plot_data_date[i] if ((i % int(config["plots"]["xticks_interval"] / 5) == 0 and (len(to_plot_data_date) - i) > config["plots"]["xticks_interval"] / 6) or i == len(to_plot_data_date) - 1) else None for i in range(len(to_plot_data_date))]  # make x ticks nice
+xticks = [to_plot_data_date[i] if ((i % int(ticks_interval / 5) == 0 and (len(to_plot_data_date) - i) > ticks_interval / 6) or i == len(to_plot_data_date) - 1) else None for i in range(len(to_plot_data_date))]  # make x ticks nice
 xs = np.arange(0, len(xticks))
 plt.xticks(xs, xticks, rotation='vertical')
 plt.grid(b=None, which='major', axis='y', linestyle='--')
