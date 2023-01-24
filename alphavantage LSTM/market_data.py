@@ -1,6 +1,5 @@
 import numpy as np
 from alpha_vantage.timeseries import TimeSeries
-from plots import plot_raw_prices
 
 CONFIG = {
     "key": "YOUR_API_KEY",  # Claim your free API key here: https://www.alphavantage.co/support/#api-key
@@ -24,9 +23,6 @@ def download_price_history(symbol):
     adjusted_close_prices = [float(json_data[date][close_col_name]) for date in json_data.keys()]
     adjusted_close_prices.reverse()
     adjusted_close_prices = np.array(adjusted_close_prices)
-
-    print(f'Loaded {len(dates)} data points for {symbol}, from {dates[0]} to {dates[-1]}')
-    plot_raw_prices(dates, adjusted_close_prices, symbol)
 
     return dates, adjusted_close_prices
 

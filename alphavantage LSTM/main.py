@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from market_data import download_price_history, create_windowed_data, create_output_array
 from model import LSTMModel, TimeSeriesDataset, Normalizer, LSTMModelDefinition
-from plots import plot_predict_unseen, plot_train_vs_test, plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed
+from plots import plot_predict_unseen, plot_train_vs_test, plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed, plot_raw_prices
 
 config = {
     "symbol": "TSLA",
@@ -22,6 +22,9 @@ config = {
 symbol = config["symbol"]
 
 dates, close_prices = download_price_history(symbol)
+
+print(f'Loaded {len(dates)} data points for {symbol}, from {dates[0]} to {dates[-1]}')
+plot_raw_prices(dates, close_prices, symbol)
 
 # normalize
 scaler = Normalizer()
