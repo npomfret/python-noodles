@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
-from market_data import download_price_history, create_windowed_data, create_output_array
-from model import LSTMModel, TimeSeriesDataset, Normalizer, LSTMModelDefinition
+from market_data import download_price_history, create_windowed_data, create_output_array, Normalizer, TimeSeriesDataset
+from model import LSTMModel, LSTMModelDefinition
 from plots import plot_predict_unseen, plot_train_vs_test, plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed, plot_raw_prices
 
 config = {
@@ -21,9 +21,11 @@ config = {
 
 symbol = config["symbol"]
 
-dates, close_prices = download_price_history(symbol)
+price_history = download_price_history(symbol)
+dates = price_history.dates
+close_prices = price_history.prices
 
-print(f'Loaded {len(dates)} data points for {symbol}, from {dates[0]} to {dates[-1]}')
+print(f'Loaded {len(dates)} data points for {symbol}, from {price_history.first_date()} to {price_history.last_date()}')
 plot_raw_prices(dates, close_prices, symbol)
 
 # normalize
