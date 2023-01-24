@@ -25,7 +25,7 @@ def download_price_history(symbol):
     adjusted_close_prices.reverse()
     adjusted_close_prices = np.array(adjusted_close_prices)
 
-    print(f'Number data points: {len(dates)} (from {dates[0]} to {dates[len(dates) - 1]})')
+    print(f'Loaded {len(dates)} data points for {symbol}, from {dates[0]} to {dates[-1]}')
     plot_raw_prices(dates, adjusted_close_prices, symbol)
 
     return dates, adjusted_close_prices

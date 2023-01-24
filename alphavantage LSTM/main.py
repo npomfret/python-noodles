@@ -30,7 +30,7 @@ config = {
 
 symbol = config["symbol"]
 
-data_date, data_close_price = download_price_history(symbol)
+dates, close_prices = download_price_history(symbol)
 
 
 class Normalizer():
@@ -50,10 +50,10 @@ class Normalizer():
 
 # normalize
 scaler = Normalizer()
-normalized_data_close_price = scaler.fit_transform(data_close_price)
+normalized_prices = scaler.fit_transform(close_prices)
 
 
-def prepare_data_x(x, window_size):
+def create_windowed_data(x, window_size):
     number_of_observations = x.shape[0]
     number_of_output_rows = number_of_observations - window_size + 1
 
@@ -79,20 +79,20 @@ def prepare_data_x(x, window_size):
     return data, row_with_no_tomorrow
 
 
-def prepare_data_y(x, window_size):
+def create_output_array(x, window_size):
     # use the next day as label
     output = x[window_size:]
     return output
 
 
 window_size = config["data"]["window_size"]
-data_x, data_x_unseen = prepare_data_x(normalized_data_close_price, window_size=window_size)
-data_y = prepare_data_y(normalized_data_close_price, window_size=window_size)
+data_x, data_x_unseen = create_windowed_data(normalized_prices, window_size)
+data_y = create_output_array(normalized_prices, window_size=window_size)
 
 if len(data_x) != len(data_y):
     raise ValueError('x and y are not same length')
 
-# split dataset
+# split dataset, early stuff for training, later stuff for testing
 
 split_index = int(data_y.shape[0] * config["data"]["train_split_size"])
 data_x_train = data_x[:split_index]
@@ -100,13 +100,21 @@ data_x_val = data_x[split_index:]
 data_y_train = data_y[:split_index]
 data_y_val = data_y[split_index:]
 
-plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_val, data_date, symbol)
+plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_val, dates, symbol)
 
 
 class TimeSeriesDataset(Dataset):
     def __init__(self, x, y):
+        number_of_features = 1
+        number_of_samples = len(x)
+        if number_of_samples != len(y):
+            raise ValueError('x and y are not same length')
+        number_of_time_steps = len(x[0])
+
         # in our case, we have only 1 feature, so we need to convert `x` into [batch, sequence, features] for LSTM
         x = np.expand_dims(x, 2)
+        if x.shape != (number_of_samples, number_of_time_steps, number_of_features):
+            raise ValueError('x is wrong shape for LSTM')
 
         self.x = x.astype(np.float32)
         self.y = y.astype(np.float32)
@@ -121,11 +129,13 @@ class TimeSeriesDataset(Dataset):
 dataset_train = TimeSeriesDataset(data_x_train, data_y_train)
 dataset_val = TimeSeriesDataset(data_x_val, data_y_val)
 
-print("Train data shape", dataset_train.x.shape, dataset_train.y.shape)
-print("Validation data shape", dataset_val.x.shape, dataset_val.y.shape)
+print(f'Train data shape, x: {dataset_train.x.shape}, y: {dataset_train.y.shape}')
+print(f'Validation data shape, x: {dataset_val.x.shape}, y: {dataset_val.y.shape}')
 
-train_dataloader = DataLoader(dataset_train, batch_size=config["training"]["batch_size"], shuffle=True)
-val_dataloader = DataLoader(dataset_val, batch_size=config["training"]["batch_size"], shuffle=True)
+batch_size = config["training"]["batch_size"]
+
+train_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
+val_dataloader = DataLoader(dataset_val, batch_size=batch_size, shuffle=True)
 
 
 class LSTMModel(nn.Module):
@@ -201,8 +211,8 @@ def run_epoch(dataloader, is_training=False):
     return epoch_loss, lr
 
 
-train_dataloader = DataLoader(dataset_train, batch_size=config["training"]["batch_size"], shuffle=True)
-val_dataloader = DataLoader(dataset_val, batch_size=config["training"]["batch_size"], shuffle=True)
+train_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
+val_dataloader = DataLoader(dataset_val, batch_size=batch_size, shuffle=True)
 
 model = LSTMModel(input_size=config["model"]["input_size"], hidden_layer_size=config["model"]["lstm_size"],
                   num_layers=config["model"]["num_lstm_layers"], output_size=1, dropout=config["model"]["dropout"])
@@ -222,8 +232,8 @@ for epoch in range(config["training"]["num_epoch"]):
 
 # here we re-initialize dataloader so the data doesn't shuffled, so we can plot the values by date
 
-train_dataloader = DataLoader(dataset_train, batch_size=config["training"]["batch_size"], shuffle=False)
-val_dataloader = DataLoader(dataset_val, batch_size=config["training"]["batch_size"], shuffle=False)
+train_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=False)
+val_dataloader = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
 
 model.eval()
 
@@ -247,9 +257,9 @@ for idx, (x, y) in enumerate(val_dataloader):
     out = out.cpu().detach().numpy()
     predicted_val = np.concatenate((predicted_val, out))
 
-plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_val, data_date, data_close_price)
+plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_val, dates, close_prices)
 
-plot_predictions_vs_actual_zoomed(scaler, data_y_val, predicted_val, data_date, split_index, window_size)
+plot_predictions_vs_actual_zoomed(scaler, data_y_val, predicted_val, dates, split_index, window_size)
 
 # predict the closing price of the next trading day
 
@@ -259,4 +269,4 @@ x = torch.tensor(data_x_unseen).float().to(config["training"]["device"]).unsquee
 prediction = model(x)
 prediction = prediction.cpu().detach().numpy()
 
-plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, data_date)
+plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, dates)
