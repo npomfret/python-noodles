@@ -56,7 +56,9 @@ def plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_va
     plt.show()
 
 
-def plot_predictions_vs_actual(num_data_points, window_size, split_index, scaler, predicted_train, predicted_val, data_date, data_close_price):
+def plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_val, data_date, data_close_price):
+    num_data_points = len(data_date)
+
     # prepare data for plotting
     ticks_interval = CONFIG["xticks_interval"]
 

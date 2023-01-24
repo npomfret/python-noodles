@@ -5,6 +5,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from alpha_vantage.timeseries import TimeSeries
+
 from plots import plot_predict_unseen, plot_raw_prices, plot_train_vs_test, plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed
 
 config = {
@@ -47,9 +48,7 @@ data_close_price = [float(data[date][close_col_name]) for date in data.keys()]
 data_close_price.reverse()
 data_close_price = np.array(data_close_price)
 
-num_data_points = len(data_date)
-display_date_range = "from " + data_date[0] + " to " + data_date[num_data_points - 1]
-print("Number data points", num_data_points, display_date_range)
+print(f'Number data points: {len(data_date)} (from {data_date[0]} to {data_date[len(data_date) - 1]})')
 
 plot_raw_prices(data_date, data_close_price, symbol)
 
@@ -126,8 +125,9 @@ plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_val, d
 
 class TimeSeriesDataset(Dataset):
     def __init__(self, x, y):
-        x = np.expand_dims(x,
-                           2)  # in our case, we have only 1 feature, so we need to convert `x` into [batch, sequence, features] for LSTM
+        # in our case, we have only 1 feature, so we need to convert `x` into [batch, sequence, features] for LSTM
+        x = np.expand_dims(x, 2)
+
         self.x = x.astype(np.float32)
         self.y = y.astype(np.float32)
 
@@ -267,7 +267,7 @@ for idx, (x, y) in enumerate(val_dataloader):
     out = out.cpu().detach().numpy()
     predicted_val = np.concatenate((predicted_val, out))
 
-plot_predictions_vs_actual(num_data_points, window_size, split_index, scaler, predicted_train, predicted_val, data_date, data_close_price)
+plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_val, data_date, data_close_price)
 
 plot_predictions_vs_actual_zoomed(scaler, data_y_val, predicted_val, data_date, split_index, window_size)
 
