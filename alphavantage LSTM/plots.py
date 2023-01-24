@@ -40,13 +40,12 @@ def plot_raw_prices(price_history):
 
 
 def plot_train_vs_test(lstm_data, price_history):
-
     # prepare data for plotting
     to_plot_data_y_train = np.zeros(price_history.size())
     to_plot_data_y_test = np.zeros(price_history.size())
 
-    to_plot_data_y_train[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.inverse_transform(lstm_data.data_y_train)
-    to_plot_data_y_test[lstm_data.split_index + lstm_data.window_size:] = lstm_data.inverse_transform(lstm_data.data_y_test)
+    to_plot_data_y_train[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.unscale(lstm_data.data_y_train)
+    to_plot_data_y_test[lstm_data.split_index + lstm_data.window_size:] = lstm_data.unscale(lstm_data.data_y_test)
 
     to_plot_data_y_train = np.where(to_plot_data_y_train == 0, None, to_plot_data_y_train)
     to_plot_data_y_test = np.where(to_plot_data_y_test == 0, None, to_plot_data_y_test)
@@ -76,8 +75,8 @@ def plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price
     to_plot_data_y_train_pred = np.zeros(price_history.size())
     to_plot_data_y_val_pred = np.zeros(price_history.size())
 
-    to_plot_data_y_train_pred[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.inverse_transform(predicted_train)
-    to_plot_data_y_val_pred[lstm_data.split_index + lstm_data.window_size:] = lstm_data.inverse_transform(predicted_test)
+    to_plot_data_y_train_pred[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.unscale(predicted_train)
+    to_plot_data_y_val_pred[lstm_data.split_index + lstm_data.window_size:] = lstm_data.unscale(predicted_test)
 
     to_plot_data_y_train_pred = np.where(to_plot_data_y_train_pred == 0, None, to_plot_data_y_train_pred)
     to_plot_data_y_val_pred = np.where(to_plot_data_y_val_pred == 0, None, to_plot_data_y_val_pred)
@@ -105,8 +104,8 @@ def plot_predictions_vs_actual_zoomed(lstm_data, predicted_val, dates):
     ticks_interval = CONFIG["xticks_interval"]
 
     # prepare data for plotting the zoomed in view of the predicted prices vs. actual prices
-    to_plot_data_y_val_subset = lstm_data.inverse_transform(lstm_data.data_y_test)
-    to_plot_predicted_val = lstm_data.inverse_transform(predicted_val)
+    to_plot_data_y_val_subset = lstm_data.unscale(lstm_data.data_y_test)
+    to_plot_predicted_val = lstm_data.unscale(predicted_val)
     to_plot_data_date = dates[lstm_data.split_index + lstm_data.window_size:]
 
     # plots
@@ -126,7 +125,7 @@ def plot_predictions_vs_actual_zoomed(lstm_data, predicted_val, dates):
     plt.show()
 
 
-def plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, price_history):
+def plot_predict_unseen(lstm_data, predicted_val, prediction, price_history):
     date_object = datetime.strptime(price_history.last_date(), "%Y-%m-%d")
     next_day = date_object + timedelta(days=1)
     next_day_string = next_day.strftime("%Y-%m-%d")
@@ -136,9 +135,9 @@ def plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, price_his
     to_plot_data_y_val = np.zeros(plot_range)
     to_plot_data_y_val_pred = np.zeros(plot_range)
     to_plot_data_y_test_pred = np.zeros(plot_range)
-    to_plot_data_y_val[:plot_range - 1] = scaler.inverse_transform(data_y_val)[-plot_range + 1:]
-    to_plot_data_y_val_pred[:plot_range - 1] = scaler.inverse_transform(predicted_val)[-plot_range + 1:]
-    to_plot_data_y_test_pred[plot_range - 1] = scaler.inverse_transform(prediction)
+    to_plot_data_y_val[:plot_range - 1] = lstm_data.unscale(lstm_data.data_y_test)[-plot_range + 1:]
+    to_plot_data_y_val_pred[:plot_range - 1] = lstm_data.unscale(predicted_val)[-plot_range + 1:]
+    to_plot_data_y_test_pred[plot_range - 1] = lstm_data.unscale(prediction)
     to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
     to_plot_data_y_val_pred = np.where(to_plot_data_y_val_pred == 0, None, to_plot_data_y_val_pred)
     to_plot_data_y_test_pred = np.where(to_plot_data_y_test_pred == 0, None, to_plot_data_y_test_pred)

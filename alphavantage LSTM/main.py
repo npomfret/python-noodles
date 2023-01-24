@@ -64,4 +64,4 @@ x = torch.tensor(lstm_data.data_x_unseen).float().to(hw_device).unsqueeze(0).uns
 prediction = model.make_prediction(x)
 prediction = prediction.cpu().detach().numpy()
 
-plot_predict_unseen(lstm_data.scaler, lstm_data.data_y_test, predicted_test, prediction, price_history)
+plot_predict_unseen(lstm_data, predicted_test, prediction, price_history)

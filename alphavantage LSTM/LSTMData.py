@@ -26,5 +26,5 @@ class LSTMData:
     def plot(self, price_history):
         plot_train_vs_test(self, price_history)
 
-    def inverse_transform(self, data):
+    def unscale(self, data):
         return self.scaler.inverse_transform(data)
