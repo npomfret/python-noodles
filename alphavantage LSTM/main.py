@@ -22,17 +22,16 @@ config = {
 symbol = config["symbol"]
 
 price_history = download_price_history(symbol)
-dates = price_history.dates
-close_prices = price_history.prices
-
-print(f'Loaded {len(dates)} data points for {symbol}, from {price_history.first_date()} to {price_history.last_date()}')
+print(f'Loaded {price_history.size()} data points for {symbol}, from {price_history.first_date()} to {price_history.last_date()}')
 price_history.plot()
+
+split_ratio = config["data"]["train_split_size"]
+window_size = config["data"]["window_size"]
 
 # normalize
 scaler = Normalizer()
-normalized_prices = scaler.fit_transform(close_prices)
+normalized_prices = scaler.fit_transform(price_history.prices)
 
-window_size = config["data"]["window_size"]
 data_x, data_x_unseen = create_windowed_data(normalized_prices, window_size)
 data_y = create_output_array(normalized_prices, window_size=window_size)
 
@@ -41,13 +40,13 @@ if len(data_x) != len(data_y):
 
 # split dataset, early stuff for training, later stuff for testing
 
-split_index = int(data_y.shape[0] * config["data"]["train_split_size"])
+split_index = int(data_y.shape[0] * split_ratio)
 data_x_train = data_x[:split_index]
 data_x_test = data_x[split_index:]
 data_y_train = data_y[:split_index]
 data_y_test = data_y[split_index:]
 
-plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_test, dates, symbol)
+plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_test, price_history)
 
 dataset_train = TimeSeriesDataset(data_x_train, data_y_train)
 dataset_test = TimeSeriesDataset(data_x_test, data_y_test)
@@ -81,9 +80,9 @@ testing_dataloader = DataLoader(dataset_test, batch_size=batch_size, shuffle=Fal
 predicted_train = model.make_predictions(training_dataloader)
 predicted_test = model.make_predictions(testing_dataloader)
 
-plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_test, dates, close_prices)
+plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_test, price_history)
 
-plot_predictions_vs_actual_zoomed(scaler, data_y_test, predicted_test, dates, split_index, window_size)
+plot_predictions_vs_actual_zoomed(scaler, data_y_test, predicted_test, price_history.dates, split_index, window_size)
 
 # predict the closing price of the next trading day
 
@@ -91,4 +90,4 @@ x = torch.tensor(data_x_unseen).float().to(hw_device).unsqueeze(0).unsqueeze(2) 
 prediction = model.make_prediction(x)
 prediction = prediction.cpu().detach().numpy()
 
-plot_predict_unseen(scaler, data_y_test, predicted_test, prediction, dates)
+plot_predict_unseen(scaler, data_y_test, predicted_test, prediction, price_history.dates)

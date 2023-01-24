@@ -36,6 +36,9 @@ class PriceHistory:
         self.dates = dates
         self.prices = prices
 
+    def size(self):
+        return len(self.dates)
+
     def first_date(self):
         return self.dates[0]
 

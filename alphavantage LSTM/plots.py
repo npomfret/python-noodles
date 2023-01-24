@@ -31,7 +31,9 @@ def plot_raw_prices(data_date, data_close_price, symbol):
     plt.show()
 
 
-def plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_val, data_date, symbol):
+def plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_val, price_history):
+    data_date = price_history.dates
+    symbol = price_history.symbol
     num_data_points = len(data_date)
     ticks_interval = CONFIG["xticks_interval"]
 
@@ -56,7 +58,9 @@ def plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_va
     plt.show()
 
 
-def plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_val, data_date, data_close_price):
+def plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_val, price_history):
+    data_date = price_history.dates
+    data_close_price = price_history.prices
     num_data_points = len(data_date)
 
     # prepare data for plotting
