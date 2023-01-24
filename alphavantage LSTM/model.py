@@ -1,5 +1,6 @@
 import numpy as np
 from torch import nn as nn
+import torch.optim as optim
 from torch.utils.data import Dataset
 
 
@@ -49,7 +50,7 @@ LSTM_CONFIG = {
 }
 
 
-class LSTMModel(nn.Module):
+class LSTMModelDefinition(nn.Module):
     def __init__(self, output_size=1):
         super().__init__()
 
@@ -99,3 +100,80 @@ class LSTMModel(nn.Module):
         tensor = self.dropout(tensor)
         predictions = self.linear_2(tensor)
         return predictions[:, -1]
+
+
+class LSTMModel:
+    def __init__(self, model_definition, hw_device, learning_rate, scheduler_step_size):
+        super().__init__()
+
+        self.model_def = model_definition.to(hw_device)
+        self.hw_device = hw_device
+
+        self.criterion = nn.MSELoss()
+        self.optimizer = optim.Adam(
+            model_definition.parameters(),
+            lr=learning_rate,
+            betas=(0.9, 0.98),
+            eps=1e-9
+        )
+        self.scheduler = optim.lr_scheduler.StepLR(
+            self.optimizer,
+            step_size=scheduler_step_size,
+            gamma=0.1
+        )
+
+    def learn(self, number_of_epochs, training_dataloader, testing_dataloader):
+        for epoch in range(number_of_epochs):
+            loss_train, learning_rate_train = self.run_epoch(training_dataloader, is_training=True)
+            loss_test, learning_rate_test = self.run_epoch(testing_dataloader)
+            self.scheduler.step()
+
+            print(f'Epoch[{epoch + 1}/{number_of_epochs}], training loss:{loss_train:.6f}, testing loss:{loss_test:.6f}, lr:{learning_rate_train:.6f}]')
+
+        # Set the module in evaluation mode from here
+        self.model_def.eval()
+
+    def run_epoch(self, dataloader, is_training=False):
+        epoch_loss = 0
+
+        if is_training:
+            self.model_def.train()
+        else:
+            self.model_def.eval()
+
+        for idx, (x_tensor, y_tensor) in enumerate(dataloader):
+            if is_training:
+                self.optimizer.zero_grad()
+
+            x_tensor = x_tensor.to(self.hw_device)
+            y_tensor = y_tensor.to(self.hw_device)
+
+            out_tensor = self.model_def(x_tensor)
+            loss = self.criterion(out_tensor.contiguous(), y_tensor.contiguous())
+
+            if is_training:
+                loss.backward()
+                self.optimizer.step()
+
+            batch_size = x_tensor.shape[0]
+            epoch_loss += (loss.detach().item() / batch_size)
+
+        learning_rate = self.scheduler.get_last_lr()[0]
+
+        return epoch_loss, learning_rate
+
+    def make_prediction(self, x_tensor):
+        self.model_def.eval()
+        return self.model_def(x_tensor)
+
+    def make_predictions(self, data_loader):
+        self.model_def.eval()
+        res = np.array([])
+
+        for idx, (x, y) in enumerate(data_loader):
+            x = x.to(self.hw_device)
+            out = self.model_def(x)
+            out = out.cpu().detach().numpy()
+            res = np.concatenate((res, out))
+
+        return res
