@@ -54,7 +54,7 @@ testing_dataloader = lstm_data.testing_dataloader(batch_size, shuffle=False)
 predicted_train = model.make_predictions(training_dataloader)
 predicted_test = model.make_predictions(testing_dataloader)
 
-plot_predictions_vs_actual(window_size, lstm_data.split_index, lstm_data.scaler, predicted_train, predicted_test, price_history)
+plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price_history)
 
 plot_predictions_vs_actual_zoomed(lstm_data.scaler, lstm_data.data_y_test, predicted_test, price_history.dates, lstm_data.split_index, window_size)
 
@@ -64,4 +64,4 @@ x = torch.tensor(lstm_data.data_x_unseen).float().to(hw_device).unsqueeze(0).uns
 prediction = model.make_prediction(x)
 prediction = prediction.cpu().detach().numpy()
 
-plot_predict_unseen(lstm_data.scaler, lstm_data.data_y_test, predicted_test, prediction, price_history.dates)
+plot_predict_unseen(lstm_data.scaler, lstm_data.data_y_test, predicted_test, prediction, price_history)

@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure
+from datetime import datetime, timedelta
 
 CONFIG = {
     "xticks_interval": 90,  # show a date every 90 days
@@ -58,10 +59,12 @@ def plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_va
     plt.show()
 
 
-def plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train, predicted_val, price_history):
-    data_date = price_history.dates
-    data_close_price = price_history.prices
-    num_data_points = len(data_date)
+def plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price_history):
+    window_size = lstm_data.window_size
+    split_index = lstm_data.split_index
+    scaler = lstm_data.scaler
+
+    num_data_points = price_history.size()
 
     # prepare data for plotting
     ticks_interval = CONFIG["xticks_interval"]
@@ -70,18 +73,18 @@ def plot_predictions_vs_actual(window_size, split_index, scaler, predicted_train
     to_plot_data_y_val_pred = np.zeros(num_data_points)
 
     to_plot_data_y_train_pred[window_size:split_index + window_size] = scaler.inverse_transform(predicted_train)
-    to_plot_data_y_val_pred[split_index + window_size:] = scaler.inverse_transform(predicted_val)
+    to_plot_data_y_val_pred[split_index + window_size:] = scaler.inverse_transform(predicted_test)
 
     to_plot_data_y_train_pred = np.where(to_plot_data_y_train_pred == 0, None, to_plot_data_y_train_pred)
     to_plot_data_y_val_pred = np.where(to_plot_data_y_val_pred == 0, None, to_plot_data_y_val_pred)
 
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
-    plt.plot(data_date, data_close_price, label="Actual prices", color=CONFIG["color_actual"])
-    plt.plot(data_date, to_plot_data_y_train_pred, label="Predicted prices (train)", color=CONFIG["color_pred_train"])
-    plt.plot(data_date, to_plot_data_y_val_pred, label="Predicted prices (validation)", color=CONFIG["color_pred_val"])
+    plt.plot(price_history.dates, price_history.prices, label="Actual prices", color=CONFIG["color_actual"])
+    plt.plot(price_history.dates, to_plot_data_y_train_pred, label="Predicted prices (train)", color=CONFIG["color_pred_train"])
+    plt.plot(price_history.dates, to_plot_data_y_val_pred, label="Predicted prices (validation)", color=CONFIG["color_pred_val"])
     plt.title("Compare predicted prices to actual prices")
-    xticks = [data_date[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
+    xticks = [price_history.dates[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
     x = np.arange(0, len(xticks))
     plt.xticks(x, xticks, rotation='vertical')
     plt.grid(b=None, which='major', axis='y', linestyle='--')
@@ -110,7 +113,11 @@ def plot_predictions_vs_actual_zoomed(scaler, data_y_val, predicted_val, data_da
     plt.show()
 
 
-def plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, data_date):
+def plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, price_history):
+    date_object = datetime.strptime(price_history.last_date(), "%Y-%m-%d")
+    next_day = date_object + timedelta(days=1)
+    next_day_string = next_day.strftime("%Y-%m-%d")
+
     # prepare plots
     plot_range = 10
     to_plot_data_y_val = np.zeros(plot_range)
@@ -122,17 +129,18 @@ def plot_predict_unseen(scaler, data_y_val, predicted_val, prediction, data_date
     to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
     to_plot_data_y_val_pred = np.where(to_plot_data_y_val_pred == 0, None, to_plot_data_y_val_pred)
     to_plot_data_y_test_pred = np.where(to_plot_data_y_test_pred == 0, None, to_plot_data_y_test_pred)
+
     # plot
-    plot_date_test = data_date[-plot_range + 1:]
+    plot_date_test = price_history.dates[-plot_range + 1:]
     plot_date_test.append("tomorrow")
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
     plt.plot(plot_date_test, to_plot_data_y_val, label="Actual prices", marker=".", markersize=10, color=CONFIG["color_actual"])
     plt.plot(plot_date_test, to_plot_data_y_val_pred, label="Past predicted prices", marker=".", markersize=10, color=CONFIG["color_pred_val"])
     plt.plot(plot_date_test, to_plot_data_y_test_pred, label="Predicted price for next day", marker=".", markersize=20, color=CONFIG["color_pred_test"])
-    plt.title("Predicting the close price of the next trading day")
+    plt.title(f'Predicting the close price of the next trading day ({next_day_string})')
     plt.grid(b=None, which='major', axis='y', linestyle='--')
     plt.legend()
     plt.show()
 
-    print("Predicted close price of the next trading day:", round(to_plot_data_y_test_pred[plot_range - 1], 2))
+    print(f'Predicted close price of the next trading day ({next_day_string}): {round(to_plot_data_y_test_pred[plot_range - 1], 2)}')
