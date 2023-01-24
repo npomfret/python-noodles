@@ -4,17 +4,11 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-from alpha_vantage.timeseries import TimeSeries
-
-from plots import plot_predict_unseen, plot_raw_prices, plot_train_vs_test, plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed
+from market_data import download_price_history
+from plots import plot_predict_unseen, plot_train_vs_test, plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed
 
 config = {
-    "alpha_vantage": {
-        "key": "YOUR_API_KEY",  # Claim your free API key here: https://www.alphavantage.co/support/#api-key
-        "symbol": "TSLA",
-        "outputsize": "full",
-        "key_adjusted_close": "5. adjusted close",
-    },
+    "symbol": "TSLA",
     "data": {
         "window_size": 20,
         "train_split_size": 0.80,
@@ -34,23 +28,9 @@ config = {
     }
 }
 
-api_key = config["alpha_vantage"]["key"]
-symbol = config["alpha_vantage"]["symbol"]
-outputsize = config["alpha_vantage"]["outputsize"]
-ts = TimeSeries(key=api_key)
-data, meta_data = ts.get_daily_adjusted(symbol, outputsize=outputsize)
+symbol = config["symbol"]
 
-data_date = [date for date in data.keys()]
-data_date.reverse()
-
-close_col_name = config["alpha_vantage"]["key_adjusted_close"]
-data_close_price = [float(data[date][close_col_name]) for date in data.keys()]
-data_close_price.reverse()
-data_close_price = np.array(data_close_price)
-
-print(f'Number data points: {len(data_date)} (from {data_date[0]} to {data_date[len(data_date) - 1]})')
-
-plot_raw_prices(data_date, data_close_price, symbol)
+data_date, data_close_price = download_price_history(symbol)
 
 
 class Normalizer():
