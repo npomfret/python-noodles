@@ -129,7 +129,7 @@ def create_windowed_data(x, window_size):
 
     # 'output' is a 2D view of the 1D input array 'x',
     # each entry is of width 'window_size' and is effectively a shifted copy of the previous entry
-    # [
+    # eg, x = [1,2,3,4,5,6,7...] => windowed_data = [
     #     [1,2,3,4,5],
     #     [2,3,4,5,6],
     #     [3,4,5,6,7],
