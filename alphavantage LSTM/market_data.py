@@ -2,6 +2,8 @@ import numpy as np
 from alpha_vantage.timeseries import TimeSeries
 from torch.utils.data import Dataset
 
+from plots import plot_raw_prices
+
 CONFIG = {
     "key": "YOUR_API_KEY",  # Claim your free API key here: https://www.alphavantage.co/support/#api-key
     "outputsize": "full",
@@ -25,11 +27,12 @@ def download_price_history(symbol):
     adjusted_close_prices.reverse()
     adjusted_close_prices = np.array(adjusted_close_prices)
 
-    return PriceHistory(dates, adjusted_close_prices)
+    return PriceHistory(symbol, dates, adjusted_close_prices)
 
 
 class PriceHistory:
-    def __init__(self, dates, prices):
+    def __init__(self, symbol, dates, prices):
+        self.symbol = symbol
         self.dates = dates
         self.prices = prices
 
@@ -38,6 +41,9 @@ class PriceHistory:
 
     def last_date(self):
         return self.dates[-1]
+
+    def plot(self):
+        plot_raw_prices(self.dates, self.prices, self.symbol)
 
 
 def create_windowed_data(x, window_size):
