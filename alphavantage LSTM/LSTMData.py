@@ -24,11 +24,7 @@ class LSTMData:
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
     def plot(self, price_history):
-        plot_train_vs_test(
-            self.window_size,
-            self.split_index,
-            self.scaler,
-            self.data_y_train,
-            self.data_y_test,
-            price_history
-        )
+        plot_train_vs_test(self, price_history)
+
+    def inverse_transform(self, data):
+        return self.scaler.inverse_transform(data)

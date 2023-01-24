@@ -32,48 +32,42 @@ def plot_raw_prices(data_date, data_close_price, symbol):
     plt.show()
 
 
-def plot_train_vs_test(window_size, split_index, scaler, data_y_train, data_y_val, price_history):
-    data_date = price_history.dates
-    symbol = price_history.symbol
-    num_data_points = len(data_date)
+def plot_train_vs_test(lstm_data, price_history):
     ticks_interval = CONFIG["xticks_interval"]
 
     # prepare data for plotting
-    to_plot_data_y_train = np.zeros(num_data_points)
-    to_plot_data_y_val = np.zeros(num_data_points)
-    to_plot_data_y_train[window_size:split_index + window_size] = scaler.inverse_transform(data_y_train)
-    to_plot_data_y_val[split_index + window_size:] = scaler.inverse_transform(data_y_val)
+    to_plot_data_y_train = np.zeros(price_history.size())
+    to_plot_data_y_test = np.zeros(price_history.size())
+
+    to_plot_data_y_train[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.inverse_transform(lstm_data.data_y_train)
+    to_plot_data_y_test[lstm_data.split_index + lstm_data.window_size:] = lstm_data.inverse_transform(lstm_data.data_y_test)
+
     to_plot_data_y_train = np.where(to_plot_data_y_train == 0, None, to_plot_data_y_train)
-    to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
+    to_plot_data_y_test = np.where(to_plot_data_y_test == 0, None, to_plot_data_y_test)
+
     ## plots
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
-    plt.plot(data_date, to_plot_data_y_train, label="Prices (train)", color=CONFIG["color_train"])
-    plt.plot(data_date, to_plot_data_y_val, label="Prices (validation)", color=CONFIG["color_val"])
-    xticks = [data_date[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
+    plt.plot(price_history.dates, to_plot_data_y_train, label="Prices (train)", color=CONFIG["color_train"])
+    plt.plot(price_history.dates, to_plot_data_y_test, label="Prices (validation)", color=CONFIG["color_val"])
+    xticks = [price_history.dates[i] if ((i % ticks_interval == 0 and (price_history.size() - i) > ticks_interval) or i == price_history.size() - 1) else None for i in range(price_history.size())]  # make x ticks nice
     x = np.arange(0, len(xticks))
     plt.xticks(x, xticks, rotation='vertical')
-    plt.title("Daily close prices for " + symbol + " - showing training and validation data")
+    plt.title("Daily close prices for " + price_history.symbol + " - showing training and validation data")
     plt.grid(b=None, which='major', axis='y', linestyle='--')
     plt.legend()
     plt.show()
 
 
 def plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price_history):
-    window_size = lstm_data.window_size
-    split_index = lstm_data.split_index
-    scaler = lstm_data.scaler
-
-    num_data_points = price_history.size()
-
     # prepare data for plotting
     ticks_interval = CONFIG["xticks_interval"]
 
-    to_plot_data_y_train_pred = np.zeros(num_data_points)
-    to_plot_data_y_val_pred = np.zeros(num_data_points)
+    to_plot_data_y_train_pred = np.zeros(price_history.size())
+    to_plot_data_y_val_pred = np.zeros(price_history.size())
 
-    to_plot_data_y_train_pred[window_size:split_index + window_size] = scaler.inverse_transform(predicted_train)
-    to_plot_data_y_val_pred[split_index + window_size:] = scaler.inverse_transform(predicted_test)
+    to_plot_data_y_train_pred[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.inverse_transform(predicted_train)
+    to_plot_data_y_val_pred[lstm_data.split_index + lstm_data.window_size:] = lstm_data.inverse_transform(predicted_test)
 
     to_plot_data_y_train_pred = np.where(to_plot_data_y_train_pred == 0, None, to_plot_data_y_train_pred)
     to_plot_data_y_val_pred = np.where(to_plot_data_y_val_pred == 0, None, to_plot_data_y_val_pred)
@@ -84,7 +78,7 @@ def plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price
     plt.plot(price_history.dates, to_plot_data_y_train_pred, label="Predicted prices (train)", color=CONFIG["color_pred_train"])
     plt.plot(price_history.dates, to_plot_data_y_val_pred, label="Predicted prices (validation)", color=CONFIG["color_pred_val"])
     plt.title("Compare predicted prices to actual prices")
-    xticks = [price_history.dates[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
+    xticks = [price_history.dates[i] if ((i % ticks_interval == 0 and (price_history.size() - i) > ticks_interval) or i == price_history.size() - 1) else None for i in range(price_history.size())]  # make x ticks nice
     x = np.arange(0, len(xticks))
     plt.xticks(x, xticks, rotation='vertical')
     plt.grid(b=None, which='major', axis='y', linestyle='--')
@@ -92,13 +86,14 @@ def plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price
     plt.show()
 
 
-def plot_predictions_vs_actual_zoomed(scaler, data_y_val, predicted_val, data_date, split_index, window_size):
+def plot_predictions_vs_actual_zoomed(lstm_data, predicted_val, dates):
     ticks_interval = CONFIG["xticks_interval"]
 
     # prepare data for plotting the zoomed in view of the predicted prices vs. actual prices
-    to_plot_data_y_val_subset = scaler.inverse_transform(data_y_val)
-    to_plot_predicted_val = scaler.inverse_transform(predicted_val)
-    to_plot_data_date = data_date[split_index + window_size:]
+    to_plot_data_y_val_subset = lstm_data.inverse_transform(lstm_data.data_y_test)
+    to_plot_predicted_val = lstm_data.inverse_transform(predicted_val)
+    to_plot_data_date = dates[lstm_data.split_index + lstm_data.window_size:]
+
     # plots
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))

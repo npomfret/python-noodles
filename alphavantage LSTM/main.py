@@ -56,7 +56,7 @@ predicted_test = model.make_predictions(testing_dataloader)
 
 plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price_history)
 
-plot_predictions_vs_actual_zoomed(lstm_data.scaler, lstm_data.data_y_test, predicted_test, price_history.dates, lstm_data.split_index, window_size)
+plot_predictions_vs_actual_zoomed(lstm_data, predicted_test, price_history.dates)
 
 # predict the closing price of the next trading day
 
