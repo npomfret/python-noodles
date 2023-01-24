@@ -129,8 +129,7 @@ print(f'Validation data shape, x: {dataset_val.x.shape}, y: {dataset_val.y.shape
 
 batch_size = config["training"]["batch_size"]
 
-train_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
-val_dataloader = DataLoader(dataset_val, batch_size=batch_size, shuffle=True)
+hw_device = config["training"]["device"]
 
 
 def run_epoch(dataloader, is_training=False):
@@ -141,23 +140,22 @@ def run_epoch(dataloader, is_training=False):
     else:
         model.eval()
 
-    for idx, (x, y) in enumerate(dataloader):
+    for idx, (x_tensor, y_tensor) in enumerate(dataloader):
         if is_training:
             optimizer.zero_grad()
 
-        batchsize = x.shape[0]
+        x_tensor = x_tensor.to(hw_device)
+        y_tensor = y_tensor.to(hw_device)
 
-        x = x.to(config["training"]["device"])
-        y = y.to(config["training"]["device"])
-
-        out = model(x)
-        loss = criterion(out.contiguous(), y.contiguous())
+        out_tensor = model(x_tensor)
+        loss = criterion(out_tensor.contiguous(), y_tensor.contiguous())
 
         if is_training:
             loss.backward()
             optimizer.step()
 
-        epoch_loss += (loss.detach().item() / batchsize)
+        bs = x_tensor.shape[0]
+        epoch_loss += (loss.detach().item() / bs)
 
     lr = scheduler.get_last_lr()[0]
 
@@ -168,7 +166,7 @@ train_dataloader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True
 val_dataloader = DataLoader(dataset_val, batch_size=batch_size, shuffle=True)
 
 model = LSTMModel(output_size=1)
-model = model.to(config["training"]["device"])
+model = model.to(hw_device)
 
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=config["training"]["learning_rate"], betas=(0.9, 0.98), eps=1e-9)
