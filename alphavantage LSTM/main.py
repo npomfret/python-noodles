@@ -1,3 +1,5 @@
+from typing import Any
+
 import torch
 from numpy import ndarray
 from torch import Tensor
@@ -54,7 +56,7 @@ model.learn(
 training_dataloader = lstm_data.training_dataloader(batch_size, shuffle=False)
 testing_dataloader = lstm_data.testing_dataloader(batch_size, shuffle=False)
 
-predicted_train: ndarray[float] = model.make_predictions(training_dataloader)
+predicted_train: ndarray[(Any, 1)] = model.make_predictions(training_dataloader)
 predicted_test = model.make_predictions(testing_dataloader)
 
 plot_predictions_vs_actual(price_history, lstm_data, predicted_train, predicted_test)

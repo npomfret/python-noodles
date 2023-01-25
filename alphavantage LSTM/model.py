@@ -3,7 +3,7 @@ from numpy import ndarray
 from torch import nn as nn, Tensor
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from typing import Tuple
+from typing import Tuple, Any
 
 LSTM_CONFIG = {
     "input_size": 1,  # since we are only using 1 feature, close price
@@ -125,20 +125,19 @@ class LSTMModel:
 
         return epoch_loss, learning_rate
 
-    def make_prediction(self, x_tensor: Tensor) -> ndarray[float]:
+    def make_prediction(self, x_tensor: Tensor) -> ndarray[(Any, 1)]:
         self.model_def.eval()
 
         x_tensor = x_tensor.to(self.hw_device)
         out: Tensor = self.model_def(x_tensor)
-        result: ndarray[float] = out.cpu().detach().numpy()
 
-        return result
+        return out.cpu().detach().numpy()
 
-    def make_predictions(self, data_loader) -> ndarray[float]:
-        results: ndarray[float] = np.array([])
+    def make_predictions(self, data_loader) -> ndarray[(Any, 1)]:
+        results: ndarray[(Any, 1)] = np.array([])
 
         for idx, (x_tensor, *_) in enumerate(data_loader):
-            result: ndarray[float] = self.make_prediction(x_tensor)
+            result: ndarray[(Any, 1)] = self.make_prediction(x_tensor)
             results = np.concatenate((results, result))
 
         return results

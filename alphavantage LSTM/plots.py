@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure
 from datetime import datetime, timedelta
 from numpy import ndarray
-from typing import List
+from typing import List, Any
 
 CONFIG = {
     "xticks_interval": 90,  # show a date every 90 days
@@ -39,8 +39,8 @@ def plot_raw_prices(price_history):
 
 def plot_train_vs_test(price_history, lstm_data):
     # prepare data for plotting
-    to_plot_data_y_train: ndarray[float] = np.zeros(price_history.size())
-    to_plot_data_y_test: ndarray[float] = np.zeros(price_history.size())
+    to_plot_data_y_train: ndarray[(Any, 1)] = np.zeros(price_history.size())
+    to_plot_data_y_test: ndarray[(Any, 1)] = np.zeros(price_history.size())
 
     y_train_start = lstm_data.window_size
     y_train_end = lstm_data.split_index + lstm_data.window_size
@@ -71,11 +71,11 @@ def plot_train_vs_test(price_history, lstm_data):
     plt.show()
 
 
-def plot_predictions_vs_actual(price_history, lstm_data, predicted_train: ndarray[float], predicted_test: ndarray[float]):
+def plot_predictions_vs_actual(price_history, lstm_data, predicted_train: ndarray[(Any, 1)], predicted_test: ndarray[(Any, 1)]):
     # prepare data for plotting
 
-    to_plot_data_y_train_pred: ndarray[float] = np.zeros(price_history.size())
-    to_plot_data_y_val_pred: ndarray[float] = np.zeros(price_history.size())
+    to_plot_data_y_train_pred: ndarray[(Any, 1)] = np.zeros(price_history.size())
+    to_plot_data_y_val_pred: ndarray[(Any, 1)] = np.zeros(price_history.size())
 
     to_plot_data_y_train_pred[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.unscale(predicted_train)
     to_plot_data_y_val_pred[lstm_data.split_index + lstm_data.window_size:] = lstm_data.unscale(predicted_test)
@@ -102,7 +102,7 @@ def plot_predictions_vs_actual(price_history, lstm_data, predicted_train: ndarra
     plt.show()
 
 
-def plot_predictions_vs_actual_zoomed(price_history, lstm_data, predicted_val: ndarray[float]):
+def plot_predictions_vs_actual_zoomed(price_history, lstm_data, predicted_val: ndarray[(Any, 1)]):
     dates: List[str] = price_history.dates
 
     ticks_interval = CONFIG["xticks_interval"]
@@ -129,22 +129,22 @@ def plot_predictions_vs_actual_zoomed(price_history, lstm_data, predicted_val: n
     plt.show()
 
 
-def plot_predict_unseen(price_history, lstm_data, predicted_val: ndarray[float], unseen_prediction: ndarray[float]):
+def plot_predict_unseen(price_history, lstm_data, predicted_val: ndarray[(Any, 1)], unseen_prediction: [(Any, 1)]):
     date_object = datetime.strptime(price_history.last_date(), "%Y-%m-%d")
     next_day = date_object + timedelta(days=1)
     next_day_string = next_day.strftime("%Y-%m-%d")
 
     # prepare plots
     plot_range = 10
-    to_plot_data_y_test: ndarray[float] = np.zeros(plot_range)
+    to_plot_data_y_test: ndarray[(Any, 1)] = np.zeros(plot_range)
     to_plot_data_y_test[:plot_range - 1] = lstm_data.unscale(lstm_data.data_y_test)[-plot_range + 1:]
     to_plot_data_y_test = np.where(to_plot_data_y_test == 0, None, to_plot_data_y_test)
 
-    to_plot_data_y_test_pred: ndarray[float] = np.zeros(plot_range)
+    to_plot_data_y_test_pred: ndarray[(Any, 1)] = np.zeros(plot_range)
     to_plot_data_y_test_pred[:plot_range - 1] = lstm_data.unscale(predicted_val)[-plot_range + 1:]
     to_plot_data_y_test_pred = np.where(to_plot_data_y_test_pred == 0, None, to_plot_data_y_test_pred)
 
-    to_plot_data_y_unseen_pred: ndarray[float] = np.zeros(plot_range)
+    to_plot_data_y_unseen_pred: ndarray[(Any, 1)] = np.zeros(plot_range)
     to_plot_data_y_unseen_pred[plot_range - 1] = lstm_data.unscale(unseen_prediction)
     to_plot_data_y_unseen_pred = np.where(to_plot_data_y_unseen_pred == 0, None, to_plot_data_y_unseen_pred)
 
