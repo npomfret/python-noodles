@@ -95,5 +95,3 @@ class PriceHistory:
             data_x_unseen,
             window_size,
         )
-
-

@@ -7,7 +7,7 @@ CONFIG = {
     "xticks_interval": 90,  # show a date every 90 days
     "color_actual": "#001f3f",
     "color_train": "#3D9970",
-    "color_val": "#0074D9",
+    "color_test": "#0074D9",
     "color_pred_train": "#3D9970",
     "color_pred_test": "#0074D9",
     "color_pred_unseen": "#FF4136",
@@ -54,7 +54,7 @@ def plot_train_vs_test(lstm_data, price_history):
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
     plt.plot(price_history.dates, to_plot_data_y_train, label="Prices (train)", color=CONFIG["color_train"])
-    plt.plot(price_history.dates, to_plot_data_y_test, label="Prices (testing)", color=CONFIG["color_val"])
+    plt.plot(price_history.dates, to_plot_data_y_test, label="Prices (testing)", color=CONFIG["color_test"])
 
     title = "Daily close prices for " + price_history.symbol + " - showing training and testing data"
 

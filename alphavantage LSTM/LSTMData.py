@@ -1,5 +1,4 @@
 from torch.utils.data import DataLoader
-
 from TimeSeriesDataset import TimeSeriesDataset
 from plots import plot_train_vs_test
 
