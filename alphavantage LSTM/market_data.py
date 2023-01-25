@@ -18,7 +18,7 @@ def download_price_history(symbol: str):
     try:
         with open(path) as file:
             json_data = json.load(file)
-        print(f'loaded cache json market data from {path}')
+        print(f'Using cached market data from: {path}')
     except:
         ts = TimeSeries(key=(CONFIG["key"]))
 
