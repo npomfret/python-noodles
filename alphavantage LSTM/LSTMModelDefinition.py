@@ -45,16 +45,16 @@ class LSTMModelDefinition(nn.Module):
         batch_size = tensor.shape[0]
 
         # layer 1
-        tensor = self.linear_1(tensor)
-        tensor = self.relu(tensor)
+        tensor_1 = self.linear_1(tensor)
+        tensor_2 = self.relu(tensor_1)
 
         # LSTM layer
-        lstm_out, (h_n, c_n) = self.lstm(tensor)
+        lstm_out, (h_n, c_n) = self.lstm(tensor_2)
 
         # reshape output from hidden cell into [batch, features] for `linear_2`
-        tensor = h_n.permute(1, 0, 2).reshape(batch_size, -1)
+        tensor_3 = h_n.permute(1, 0, 2).reshape(batch_size, -1)
 
         # layer 2
-        tensor = self.dropout(tensor)
-        predictions = self.linear_2(tensor)
+        tensor_4 = self.dropout(tensor_3)
+        predictions = self.linear_2(tensor_4)
         return predictions[:, -1]
