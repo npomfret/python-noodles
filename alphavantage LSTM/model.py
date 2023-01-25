@@ -1,9 +1,9 @@
 import numpy as np
 from numpy import ndarray
-from torch import nn as nn
+from torch import nn as nn, Tensor
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from typing import List, Tuple
+from typing import Tuple
 
 LSTM_CONFIG = {
     "input_size": 1,  # since we are only using 1 feature, close price
@@ -111,7 +111,7 @@ class LSTMModel:
             x_tensor = x_tensor.to(self.hw_device)
             y_tensor = y_tensor.to(self.hw_device)
 
-            out_tensor = self.model_def(x_tensor)
+            out_tensor: Tensor = self.model_def(x_tensor)
             loss = self.criterion(out_tensor.contiguous(), y_tensor.contiguous())
 
             if is_training:
@@ -125,18 +125,20 @@ class LSTMModel:
 
         return epoch_loss, learning_rate
 
-    def make_prediction(self, x_tensor):
+    def make_prediction(self, x_tensor: Tensor) -> ndarray[float]:
         self.model_def.eval()
-        return self.model_def(x_tensor)
 
-    def make_predictions(self, data_loader):
-        self.model_def.eval()
-        res: ndarray[float] = np.array([])
+        x_tensor = x_tensor.to(self.hw_device)
+        out: Tensor = self.model_def(x_tensor)
+        result: ndarray[float] = out.cpu().detach().numpy()
 
-        for idx, (x, y) in enumerate(data_loader):
-            x = x.to(self.hw_device)
-            out = self.model_def(x)
-            out = out.cpu().detach().numpy()
-            res = np.concatenate((res, out))
+        return result
 
-        return res
+    def make_predictions(self, data_loader) -> ndarray[float]:
+        results: ndarray[float] = np.array([])
+
+        for idx, (x_tensor, *_) in enumerate(data_loader):
+            result: ndarray[float] = self.make_prediction(x_tensor)
+            results = np.concatenate((results, result))
+
+        return results
