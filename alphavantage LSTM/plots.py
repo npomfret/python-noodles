@@ -2,7 +2,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure
 from datetime import datetime, timedelta
-from numpy import ndarray
 from typing import List, Any
 from nptyping import NDArray, Shape, Float
 

@@ -1,6 +1,4 @@
-from typing import Any
 import numpy as np
-from numpy import ndarray
 from nptyping import NDArray, Shape, Float
 
 

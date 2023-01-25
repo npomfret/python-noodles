@@ -1,6 +1,5 @@
 import numpy as np
-from nptyping import NDArray, Shape, Float, assert_isinstance
-from numpy import ndarray
+from nptyping import assert_isinstance
 from LSTMData import LSTMData
 from Normalizer import Normalizer
 from plots import plot_raw_prices
@@ -23,7 +22,7 @@ def create_windowed_data(x: NDArray[Shape["*"], Float], window_size: int) -> NDA
     #     [3,4,5,6,7],
     #     ...
     # see: https://numpy.org/doc/stable/reference/generated/numpy.lib.stride_tricks.as_strided.html
-    windowed_data: NDArray[Shape[f"{number_of_output_rows}, {window_size}"], Float] = np.lib.stride_tricks.as_strided(
+    windowed_data = np.lib.stride_tricks.as_strided(
         x,
         shape=(number_of_output_rows, window_size),
         strides=(x.strides[0], x.strides[0]),
