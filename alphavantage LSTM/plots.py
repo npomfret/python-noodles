@@ -17,18 +17,14 @@ CONFIG = {
 def plot_raw_prices(price_history):
     dates = price_history.dates
 
-    color = CONFIG["color_actual"]
-
-    num_data_points = len(dates)
-    display_date_range = "from " + dates[0] + " to " + dates[num_data_points - 1]
-
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
-    plt.plot(dates, price_history.prices, color=color)
+    plt.plot(dates, price_history.prices, color=(CONFIG["color_actual"]), label=f'EOD Prices for {price_history.symbol}')
 
-    title = "Daily close price for " + price_history.symbol + ", " + display_date_range
+    title = f'Daily close price for {price_history.symbol}, "from " + {price_history.first_date()} to {price_history.last_date()}'
 
     ticks_interval = CONFIG["xticks_interval"]
+    num_data_points = price_history.size()
     xticks = [dates[i] if ((i % ticks_interval == 0 and (num_data_points - i) > ticks_interval) or i == num_data_points - 1) else None for i in range(num_data_points)]  # make x ticks nice
 
     x = np.arange(0, len(xticks))
@@ -129,7 +125,7 @@ def plot_predictions_vs_actual_zoomed(lstm_data, predicted_val, dates):
     plt.show()
 
 
-def plot_predict_unseen(lstm_data, predicted_val, prediction, price_history):
+def plot_predict_unseen(lstm_data, predicted_val, unseen_prediction, price_history):
     date_object = datetime.strptime(price_history.last_date(), "%Y-%m-%d")
     next_day = date_object + timedelta(days=1)
     next_day_string = next_day.strftime("%Y-%m-%d")
@@ -141,7 +137,7 @@ def plot_predict_unseen(lstm_data, predicted_val, prediction, price_history):
     to_plot_data_y_test_pred = np.zeros(plot_range)
     to_plot_data_y_val[:plot_range - 1] = lstm_data.unscale(lstm_data.data_y_test)[-plot_range + 1:]
     to_plot_data_y_val_pred[:plot_range - 1] = lstm_data.unscale(predicted_val)[-plot_range + 1:]
-    to_plot_data_y_test_pred[plot_range - 1] = lstm_data.unscale(prediction)
+    to_plot_data_y_test_pred[plot_range - 1] = lstm_data.unscale(unseen_prediction)
     to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
     to_plot_data_y_val_pred = np.where(to_plot_data_y_val_pred == 0, None, to_plot_data_y_val_pred)
     to_plot_data_y_test_pred = np.where(to_plot_data_y_test_pred == 0, None, to_plot_data_y_test_pred)
