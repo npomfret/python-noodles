@@ -1,9 +1,9 @@
 import numpy as np
-from numpy import ndarray
+import torch
 from torch import nn as nn, Tensor
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from typing import Tuple, Any
+from typing import Tuple
 from nptyping import NDArray, Shape, Float
 
 LSTM_CONFIG = {
@@ -142,3 +142,7 @@ class LSTMModel:
             results = np.concatenate((results, result))
 
         return results
+
+    def convert_1d_row_to_tensor(self, x: NDArray[Shape["*"], Float]):
+        return torch.tensor(x).float().to(self.hw_device).unsqueeze(0).unsqueeze(2)
+

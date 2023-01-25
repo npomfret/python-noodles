@@ -1,12 +1,8 @@
-from typing import Any
 from nptyping import NDArray, Shape, Float
-import torch
-from numpy import ndarray
 from torch import Tensor
-
 from market_data import download_price_history
 from model import LSTMModel, LSTMModelDefinition
-from plots import plot_predict_unseen, plot_train_vs_test, plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed
+from plots import plot_predict_unseen,  plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed
 
 config = {
     "symbol": "TSLA",
@@ -64,7 +60,6 @@ plot_predictions_vs_actual(price_history, lstm_data, predicted_train, predicted_
 plot_predictions_vs_actual_zoomed(price_history, lstm_data, predicted_test)
 
 # predict the closing price of the next trading day
-
-x: Tensor = torch.tensor(lstm_data.data_x_unseen).float().to(hw_device).unsqueeze(0).unsqueeze(2)  # this is the data type and shape required, [batch, sequence, feature]
+x: Tensor = model.convert_1d_row_to_tensor(lstm_data.data_x_unseen)  # this is the data type and shape required, [batch, sequence, feature]
 prediction = model.make_prediction(x)
 plot_predict_unseen(price_history, lstm_data, predicted_test, prediction)

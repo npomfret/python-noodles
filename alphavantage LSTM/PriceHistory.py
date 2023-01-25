@@ -65,8 +65,12 @@ class PriceHistory:
         data_x: NDArray[Shape["*, *"], Float] = create_windowed_data(normalized_prices, window_size)
 
         # discard the last row as we don't know what the y value is (because it's in the future)
-        data_x_unseen: NDArray[Shape["*, *"], Float] = data_x[-1]
+        data_x_unseen: NDArray[Shape["*"], Float] = data_x[-1]
         data_x: NDArray[Shape["*, *"], Float] = data_x[:-1]
+
+        # sanity check
+        assert_isinstance(data_x_unseen, NDArray[Shape["*"], Float])
+        assert_isinstance(data_x_unseen, NDArray[Shape[f"{window_size}"], Float])
 
         # we just use the next day as label, starting at index 'window_size'
         data_y: NDArray[Shape["*"], Float] = normalized_prices[window_size:]

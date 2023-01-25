@@ -15,7 +15,7 @@ class LSTMData:
                  data_y_train: NDArray[Shape["*"], Float],
                  data_y_test: NDArray[Shape["*"], Float],
                  scaler: Normalizer,
-                 data_x_unseen: NDArray[Shape["*, *"], Float],
+                 data_x_unseen: NDArray[Shape["*"], Float],
                  window_size: int):
         self.split_index = split_index
         self.data_x_train = data_x_train
