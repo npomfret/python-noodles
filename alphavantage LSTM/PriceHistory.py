@@ -33,17 +33,16 @@ def create_windowed_data(x, window_size):
 
 class Normalizer:
     def __init__(self):
-        self.mu = None
+        self.mean = None
         self.sd = None
 
     def fit_transform(self, x):
-        self.mu = np.mean(x, axis=0, keepdims=True)
+        self.mean = np.mean(x, axis=0, keepdims=True)
         self.sd = np.std(x, axis=0, keepdims=True)
-        normalized_x = (x - self.mu) / self.sd
-        return normalized_x
+        return (x - self.mean) / self.sd
 
     def inverse_transform(self, x):
-        return (x * self.sd) + self.mu
+        return (x * self.sd) + self.mean
 
 
 class PriceHistory:
