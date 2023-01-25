@@ -1,7 +1,8 @@
 import numpy as np
 from alpha_vantage.timeseries import TimeSeries
 from PriceHistory import PriceHistory
-from typing import List
+from typing import List, Any
+from nptyping import NDArray, Int, Shape, Float, assert_isinstance
 
 CONFIG = {
     "key": "YOUR_API_KEY",  # Claim your free API key here: https://www.alphavantage.co/support/#api-key
@@ -22,4 +23,7 @@ def download_price_history(symbol: str):
     adjusted_close_prices: List[float] = [float(json_data[date][close_col_name]) for date in json_data.keys()]
     adjusted_close_prices.reverse()
 
-    return PriceHistory(symbol, dates, np.array(adjusted_close_prices))
+    prices: NDArray[Shape["*"], Float] = np.array(adjusted_close_prices)
+    assert_isinstance(prices, NDArray[Shape["*"], Float])
+
+    return PriceHistory(symbol, dates, prices)

@@ -2,10 +2,11 @@ import numpy as np
 from numpy import ndarray
 from torch.utils.data import Dataset
 from typing import Tuple, Any
+from nptyping import NDArray, Shape, Float
 
 
 class TimeSeriesDataset(Dataset):
-    def __init__(self, x: ndarray[(Any, 1)], y: ndarray[(Any, 1)]):
+    def __init__(self, x: NDArray[Shape["*"], Float], y: NDArray[Shape["*"], Float]):
         number_of_features = 1
         number_of_samples = len(x)
         if number_of_samples != len(y):

@@ -1,7 +1,7 @@
 from typing import Any
-
 import numpy as np
 from numpy import ndarray
+from nptyping import NDArray, Shape, Float
 
 
 class Normalizer:
@@ -9,7 +9,7 @@ class Normalizer:
         self._mean = None
         self._sd = None
 
-    def fit_transform(self, x: ndarray[(Any, 1)]) -> ndarray[(Any, 1)]:
+    def fit_transform(self, x: NDArray[Shape["*"], Float]) -> NDArray[Shape["*"], Float]:
         assert len(x.shape) == 1
 
         self._mean = np.mean(x, axis=0, keepdims=True)
@@ -17,5 +17,5 @@ class Normalizer:
 
         return (x - self._mean) / self._sd
 
-    def inverse_transform(self, x: ndarray[(Any, 1)]) -> ndarray[(Any, 1)]:
+    def inverse_transform(self, x: NDArray[Shape["*"], Float]) -> NDArray[Shape["*"], Float]:
         return (x * self._sd) + self._mean

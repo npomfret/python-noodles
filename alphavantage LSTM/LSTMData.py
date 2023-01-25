@@ -1,5 +1,5 @@
 from typing import Any
-
+from nptyping import NDArray, Shape, Float
 from numpy import ndarray
 from torch.utils.data import DataLoader
 from Normalizer import Normalizer
@@ -10,12 +10,12 @@ from plots import plot_train_vs_test
 class LSTMData:
     def __init__(self,
                  split_index: int,
-                 data_x_train: ndarray[(Any, 2)],
-                 data_x_test: ndarray[(Any, 2)],
-                 data_y_train: ndarray[(Any, 1)],
-                 data_y_test: ndarray[(Any, 1)],
+                 data_x_train: NDArray[Shape["*, *"], Float],
+                 data_x_test: NDArray[Shape["*, *"], Float],
+                 data_y_train: NDArray[Shape["*"], Float],
+                 data_y_test: NDArray[Shape["*"], Float],
                  scaler: Normalizer,
-                 data_x_unseen: ndarray[(Any, 2)],
+                 data_x_unseen: NDArray[Shape["*, *"], Float],
                  window_size: int):
         self.split_index = split_index
         self.data_x_train = data_x_train
@@ -41,5 +41,5 @@ class LSTMData:
     def plot(self, price_history) -> None:
         plot_train_vs_test(price_history, self)
 
-    def unscale(self, data: ndarray[(Any, 1)]) -> ndarray[(Any, 1)]:
+    def unscale(self, data: NDArray[Shape["*"], Float]) -> NDArray[Shape["*"], Float]:
         return self.scaler.inverse_transform(data)

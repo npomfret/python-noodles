@@ -1,12 +1,14 @@
 import numpy as np
+from nptyping import NDArray, Shape, Float, assert_isinstance
 from numpy import ndarray
 from LSTMData import LSTMData
 from Normalizer import Normalizer
 from plots import plot_raw_prices
 from typing import List, Any
+from nptyping import NDArray, Shape, Float
 
 
-def create_windowed_data(x: ndarray[(Any, 1)], window_size: int) -> ndarray[(Any, 2)]:
+def create_windowed_data(x: NDArray[Shape["*"], Float], window_size: int) -> NDArray[Shape["*, *"], Float]:
     assert len(x.shape) == 1
 
     number_of_observations = x.shape[0]
@@ -21,21 +23,25 @@ def create_windowed_data(x: ndarray[(Any, 1)], window_size: int) -> ndarray[(Any
     #     [3,4,5,6,7],
     #     ...
     # see: https://numpy.org/doc/stable/reference/generated/numpy.lib.stride_tricks.as_strided.html
-    windowed_data = np.lib.stride_tricks.as_strided(
+    windowed_data: NDArray[Shape[f"{number_of_output_rows}, {window_size}"], Float] = np.lib.stride_tricks.as_strided(
         x,
         shape=(number_of_output_rows, window_size),
         strides=(x.strides[0], x.strides[0]),
         writeable=False
     )
 
+    # sanity checks
     assert len(windowed_data.shape) == 2
+    assert windowed_data.shape[0] == number_of_output_rows
     assert windowed_data.shape[1] == window_size
+    assert_isinstance(windowed_data, NDArray[Shape[f"{number_of_output_rows}, {window_size}"], Float])
+    assert_isinstance(windowed_data, NDArray[Shape["*, *"], Float])
 
     return windowed_data
 
 
 class PriceHistory:
-    def __init__(self, symbol: str, dates: List[str], prices: ndarray[(Any, 1)]):
+    def __init__(self, symbol: str, dates: List[str], prices: NDArray[Shape['*'], Float]):
         self.symbol = symbol
         self.dates = dates
         self.prices = prices
@@ -54,16 +60,16 @@ class PriceHistory:
 
     def to_lstm_data(self, split_ratio: float, window_size: int) -> LSTMData:
         scaler = Normalizer()
-        normalized_prices: ndarray[(Any, 1)] = scaler.fit_transform(self.prices)
+        normalized_prices: NDArray[Shape["*"], Float] = scaler.fit_transform(self.prices)
 
-        data_x: ndarray[(Any, 2)] = create_windowed_data(normalized_prices, window_size)
+        data_x: NDArray[Shape["*, *"], Float] = create_windowed_data(normalized_prices, window_size)
 
         # discard the last row as we don't know what the y value is (because it's in the future)
-        data_x_unseen: ndarray[(Any, 2)] = data_x[-1]
-        data_x: ndarray[(Any, 2)] = data_x[:-1]
+        data_x_unseen: NDArray[Shape["*, *"], Float] = data_x[-1]
+        data_x: NDArray[Shape["*, *"], Float] = data_x[:-1]
 
         # we just use the next day as label, starting at index 'window_size'
-        data_y: ndarray[(Any, 1)] = normalized_prices[window_size:]
+        data_y: NDArray[Shape["*"], Float] = normalized_prices[window_size:]
 
         # sanity check that x and y are of equal length (after we dropped the last row from x above)
         if len(data_x) != len(data_y):
@@ -72,11 +78,11 @@ class PriceHistory:
         # split dataset: early stuff for training, later stuff for testing
         split_index: int = int(data_y.shape[0] * split_ratio)
 
-        data_x_train: ndarray[(Any, 2)] = data_x[:split_index]
-        data_y_train: ndarray[(Any, 1)] = data_y[:split_index]
+        data_x_train: NDArray[Shape["*, *"], Float] = data_x[:split_index]
+        data_y_train: NDArray[Shape["*"], Float] = data_y[:split_index]
 
-        data_x_test: ndarray[(Any, 2)] = data_x[split_index:]
-        data_y_test: ndarray[(Any, 1)] = data_y[split_index:]
+        data_x_test: NDArray[Shape["*, *"], Float] = data_x[split_index:]
+        data_y_test: NDArray[Shape["*"], Float] = data_y[split_index:]
 
         return LSTMData(
             split_index,
