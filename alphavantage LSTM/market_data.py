@@ -3,6 +3,7 @@ from alpha_vantage.timeseries import TimeSeries
 from PriceHistory import PriceHistory
 from typing import List, Any
 from nptyping import NDArray, Int, Shape, Float, assert_isinstance
+import io, json
 
 CONFIG = {
     "key": "YOUR_API_KEY",  # Claim your free API key here: https://www.alphavantage.co/support/#api-key
@@ -12,9 +13,19 @@ CONFIG = {
 
 
 def download_price_history(symbol: str):
-    ts = TimeSeries(key=(CONFIG["key"]))
+    path = f'data/alpha_vantage_{symbol}.json'
 
-    json_data, *_ = ts.get_daily_adjusted(symbol, outputsize=(CONFIG["outputsize"]))
+    try:
+        with open(path) as file:
+            json_data = json.load(file)
+        print(f'loaded cache json market data from {path}')
+    except:
+        ts = TimeSeries(key=(CONFIG["key"]))
+
+        json_data, *_ = ts.get_daily_adjusted(symbol, outputsize=(CONFIG["outputsize"]))
+
+        with io.open(path, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(json_data, ensure_ascii=False, indent=2))
 
     dates: List[str] = list(json_data.keys())
     dates.reverse()

@@ -13,12 +13,12 @@ config = {
     "symbol": "TSLA",
     "data": {
         "window_size": 20,
-        "train_split_size": 0.80,
+        "train_split_size": 0.70,
     },
     "training": {
         "device": "cpu",  # "cuda" or "cpu"
         "batch_size": 64,
-        "num_epoch": 50,
+        "num_epoch": 100,
         "learning_rate": 0.01,
         "scheduler_step_size": 40,
     }
@@ -27,6 +27,10 @@ config = {
 symbol = config["symbol"]
 
 price_history: PriceHistory = download_price_history(symbol)
+print(f'Loaded {price_history.size()} data points for {symbol}, from {price_history.first_date()} to {price_history.last_date()}')
+price_history.plot()
+
+price_history = price_history.slice(-1000, price_history.size())
 print(f'Loaded {price_history.size()} data points for {symbol}, from {price_history.first_date()} to {price_history.last_date()}')
 price_history.plot()
 

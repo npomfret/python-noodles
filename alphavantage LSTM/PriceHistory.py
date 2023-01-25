@@ -58,6 +58,11 @@ class PriceHistory:
     def plot(self) -> None:
         plot_raw_prices(self)
 
+    def slice(self, from_x: int, to_x: int):
+        new_dates = self.dates[from_x:to_x]
+        new_prices = self.prices[from_x:to_x]
+        return PriceHistory(self.symbol, new_dates, new_prices)
+
     def to_lstm_data(self, split_ratio: float, window_size: int) -> LSTMData:
         scaler = Normalizer()
         normalized_prices: NDArray[Shape["*"], Float] = scaler.fit_transform(self.prices)
