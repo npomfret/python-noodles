@@ -44,6 +44,7 @@ class PriceHistory:
         self.symbol = symbol
         self.dates = dates
         self.prices = prices
+        assert len(self.dates) == len(self.prices)
 
     def size(self) -> int:
         return len(self.dates)
