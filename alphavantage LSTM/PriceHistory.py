@@ -24,11 +24,7 @@ def create_windowed_data(x, window_size):
         writeable=False
     )
 
-    row_with_no_tomorrow = windowed_data[-1]
-    # discard the last row
-    windowed_data = windowed_data[:-1]
-
-    return windowed_data, row_with_no_tomorrow
+    return windowed_data
 
 
 class Normalizer:
@@ -67,12 +63,16 @@ class PriceHistory:
         scaler = Normalizer()
         normalized_prices = scaler.fit_transform(self.prices)
 
-        data_x, data_x_unseen = create_windowed_data(normalized_prices, window_size)
+        data_x = create_windowed_data(normalized_prices, window_size)
+
+        # discard the last row as we don't know what the 'y' is (because the 'y' for this row is in the future)
+        data_x_unseen = data_x[-1]
+        data_x = data_x[:-1]
 
         # we just use the next day as label, starting at index 'window_size'
         data_y = normalized_prices[window_size:]
 
-        # sanity check that x and y are of equal length
+        # sanity check that x and y are of equal length (after we dropped the last row from x above)
         if len(data_x) != len(data_y):
             raise ValueError('x and y are not same length')
 
@@ -81,6 +81,7 @@ class PriceHistory:
 
         data_x_train = data_x[:split_index]
         data_x_test = data_x[split_index:]
+
         data_y_train = data_y[:split_index]
         data_y_test = data_y[split_index:]
 
