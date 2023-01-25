@@ -1,6 +1,4 @@
-from typing import Any
 from nptyping import NDArray, Shape, Float
-from numpy import ndarray
 from torch.utils.data import DataLoader
 from Normalizer import Normalizer
 from TimeSeriesDataset import TimeSeriesDataset
@@ -28,7 +26,7 @@ class LSTMData:
 
     def training_dataloader(self, batch_size: int, shuffle=True) -> DataLoader:
         dataset = TimeSeriesDataset(self.data_x_train, self.data_y_train)
-        print(f'Train data shape, x: {dataset.x.shape}, y: {dataset.y.shape}')
+        print(f'Training data shape, x: {dataset.x.shape}, y: {dataset.y.shape}')
 
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 

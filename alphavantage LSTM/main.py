@@ -1,7 +1,8 @@
 from nptyping import NDArray, Shape, Float
 from torch import Tensor
 from market_data import download_price_history
-from model import LSTMModel, LSTMModelDefinition
+from LSTMModelDefinition import LSTMModelDefinition
+from LSTMModel import LSTMModel
 from plots import plot_predict_unseen,  plot_predictions_vs_actual, plot_predictions_vs_actual_zoomed
 
 config = {
