@@ -47,7 +47,7 @@ class LSTMModelDefinition(nn.Module):
             elif 'weight_hh' in name:
                 nn.init.orthogonal_(param)
 
-    def forward(self, tensor):
+    def forward(self, tensor: Tensor):
         batch_size = tensor.shape[0]
 
         # layer 1
@@ -134,7 +134,7 @@ class LSTMModel:
 
         return out.cpu().detach().numpy()
 
-    def make_predictions(self, data_loader) -> NDArray[Shape["*"], Float]:
+    def make_predictions(self, data_loader: DataLoader) -> NDArray[Shape["*"], Float]:
         results: NDArray[Shape["*"], Float] = np.array([])
 
         for idx, (x_tensor, *_) in enumerate(data_loader):
