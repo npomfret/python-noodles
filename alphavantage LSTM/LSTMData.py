@@ -29,7 +29,7 @@ class LSTMData:
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
     def plot(self, price_history) -> None:
-        plot_train_vs_test(self, price_history)
+        plot_train_vs_test(price_history, self)
 
     def unscale(self, data: ndarray[float]) -> ndarray[float]:
         return self.scaler.inverse_transform(data)

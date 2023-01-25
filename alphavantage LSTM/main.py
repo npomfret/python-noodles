@@ -57,12 +57,12 @@ testing_dataloader = lstm_data.testing_dataloader(batch_size, shuffle=False)
 predicted_train: ndarray[float] = model.make_predictions(training_dataloader)
 predicted_test = model.make_predictions(testing_dataloader)
 
-plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price_history)
+plot_predictions_vs_actual(price_history, lstm_data, predicted_train, predicted_test)
 
-plot_predictions_vs_actual_zoomed(lstm_data, predicted_test, price_history.dates)
+plot_predictions_vs_actual_zoomed(price_history, lstm_data, predicted_test)
 
 # predict the closing price of the next trading day
 
 x: Tensor = torch.tensor(lstm_data.data_x_unseen).float().to(hw_device).unsqueeze(0).unsqueeze(2)  # this is the data type and shape required, [batch, sequence, feature]
 prediction = model.make_prediction(x)
-plot_predict_unseen(lstm_data, predicted_test, prediction, price_history)
+plot_predict_unseen(price_history, lstm_data, predicted_test, prediction)
