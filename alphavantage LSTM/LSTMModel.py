@@ -16,7 +16,7 @@ class LSTMModel:
         self.model_def = model_definition.to(hw_device)
         self.hw_device = hw_device
 
-        self.criterion = nn.MSELoss()
+        self.loss_fn = nn.MSELoss()
         self.optimizer = optim.Adam(
             model_definition.parameters(),
             lr=learning_rate,
@@ -56,7 +56,7 @@ class LSTMModel:
             y_tensor = y_tensor.to(self.hw_device)
 
             out_tensor: Tensor = self.model_def(x_tensor)
-            loss = self.criterion(out_tensor.contiguous(), y_tensor.contiguous())
+            loss = self.loss_fn(out_tensor.contiguous(), y_tensor.contiguous())
 
             if is_training:
                 loss.backward()
