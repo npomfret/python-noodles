@@ -150,7 +150,7 @@ def plot_predict_unseen(price_history, lstm_data, predicted_val: NDArray[Shape["
 
     # plot
     plot_date_test = price_history.dates[-plot_range + 1:]
-    plot_date_test.append("tomorrow")
+    plot_date_test.append(f'>>{next_day_string}<<')
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
     plt.plot(plot_date_test, to_plot_data_y_test, label="Actual prices", marker=".", markersize=10, color=CONFIG["color_actual"])
