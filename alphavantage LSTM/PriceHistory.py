@@ -80,9 +80,9 @@ class PriceHistory:
         split_index = int(data_y.shape[0] * split_ratio)
 
         data_x_train = data_x[:split_index]
-        data_x_test = data_x[split_index:]
-
         data_y_train = data_y[:split_index]
+
+        data_x_test = data_x[split_index:]
         data_y_test = data_y[split_index:]
 
         return LSTMData(
