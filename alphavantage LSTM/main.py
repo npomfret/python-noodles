@@ -1,3 +1,4 @@
+import torch
 from nptyping import NDArray, Shape, Float
 from torch import Tensor
 from torch.utils.data import DataLoader
@@ -16,7 +17,7 @@ config = {
         "train_split_size": 0.70,
     },
     "training": {
-        "device": "cpu",  # "cuda" or "cpu"
+        "device": "cuda" if torch.cuda.is_available() else "cpu",
         "batch_size": 64,
         "num_epoch": 100,
         "learning_rate": 0.01,
@@ -25,6 +26,7 @@ config = {
 }
 
 symbol = config["symbol"]
+# TSLA: 145.42
 
 price_history: PriceHistory = download_price_history(symbol)
 print(f'Loaded {price_history.size()} data points for {symbol}, from {price_history.first_date()} to {price_history.last_date()}')
@@ -40,6 +42,7 @@ window_size = config["data"]["window_size"]
 # normalize
 lstm_data: LSTMData = price_history.to_lstm_data(split_ratio, window_size)
 lstm_data.plot(price_history)
+lstm_data.print_summary()
 
 batch_size: int = config["training"]["batch_size"]
 hw_device: str = config["training"]["device"]

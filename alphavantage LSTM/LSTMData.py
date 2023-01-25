@@ -41,3 +41,6 @@ class LSTMData:
 
     def unscale(self, data: NDArray[Shape["*"], Float]) -> NDArray[Shape["*"], Float]:
         return self.scaler.inverse_transform(data)
+
+    def print_summary(self):
+        print(self.data_x_train[:3])
