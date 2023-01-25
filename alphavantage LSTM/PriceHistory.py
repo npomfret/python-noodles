@@ -1,10 +1,12 @@
 import numpy as np
-
+from numpy import ndarray
 from LSTMData import LSTMData
+from Normalizer import Normalizer
 from plots import plot_raw_prices
+from typing import List
 
 
-def create_windowed_data(x, window_size):
+def create_windowed_data(x:ndarray[float], window_size: int) -> ndarray[float]:
     number_of_observations = x.shape[0]
     number_of_output_rows = number_of_observations - window_size + 1
 
@@ -27,63 +29,49 @@ def create_windowed_data(x, window_size):
     return windowed_data
 
 
-class Normalizer:
-    def __init__(self):
-        self.mean = None
-        self.sd = None
-
-    def fit_transform(self, x):
-        self.mean = np.mean(x, axis=0, keepdims=True)
-        self.sd = np.std(x, axis=0, keepdims=True)
-        return (x - self.mean) / self.sd
-
-    def inverse_transform(self, x):
-        return (x * self.sd) + self.mean
-
-
 class PriceHistory:
-    def __init__(self, symbol, dates, prices):
+    def __init__(self, symbol: str, dates: List[str], prices: ndarray[float]):
         self.symbol = symbol
         self.dates = dates
         self.prices = prices
 
-    def size(self):
+    def size(self) -> int:
         return len(self.dates)
 
-    def first_date(self):
+    def first_date(self) -> str:
         return self.dates[0]
 
-    def last_date(self):
+    def last_date(self) -> str:
         return self.dates[-1]
 
-    def plot(self):
+    def plot(self) -> None:
         plot_raw_prices(self)
 
-    def to_lstm_data(self, split_ratio, window_size):
+    def to_lstm_data(self, split_ratio: float, window_size: int) -> LSTMData:
         scaler = Normalizer()
-        normalized_prices = scaler.fit_transform(self.prices)
+        normalized_prices: ndarray[float] = scaler.fit_transform(self.prices)
 
-        data_x = create_windowed_data(normalized_prices, window_size)
+        data_x: ndarray[float] = create_windowed_data(normalized_prices, window_size)
 
         # discard the last row as we don't know what the 'y' is (because the 'y' for this row is in the future)
-        data_x_unseen = data_x[-1]
-        data_x = data_x[:-1]
+        data_x_unseen: ndarray[float] = data_x[-1]
+        data_x: ndarray[float] = data_x[:-1]
 
         # we just use the next day as label, starting at index 'window_size'
-        data_y = normalized_prices[window_size:]
+        data_y: ndarray[float] = normalized_prices[window_size:]
 
         # sanity check that x and y are of equal length (after we dropped the last row from x above)
         if len(data_x) != len(data_y):
             raise ValueError('x and y are not same length')
 
         # split dataset: early stuff for training, later stuff for testing
-        split_index = int(data_y.shape[0] * split_ratio)
+        split_index: int = int(data_y.shape[0] * split_ratio)
 
-        data_x_train = data_x[:split_index]
-        data_y_train = data_y[:split_index]
+        data_x_train: ndarray[float] = data_x[:split_index]
+        data_y_train: ndarray[float] = data_y[:split_index]
 
-        data_x_test = data_x[split_index:]
-        data_y_test = data_y[split_index:]
+        data_x_test: ndarray[float] = data_x[split_index:]
+        data_y_test: ndarray[float] = data_y[split_index:]
 
         return LSTMData(
             split_index,

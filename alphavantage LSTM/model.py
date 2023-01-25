@@ -1,7 +1,9 @@
 import numpy as np
+from numpy import ndarray
 from torch import nn as nn
 import torch.optim as optim
-
+from torch.utils.data import DataLoader
+from typing import List, Tuple
 
 LSTM_CONFIG = {
     "input_size": 1,  # since we are only using 1 feature, close price
@@ -64,7 +66,7 @@ class LSTMModelDefinition(nn.Module):
 
 
 class LSTMModel:
-    def __init__(self, model_definition, hw_device, learning_rate, scheduler_step_size):
+    def __init__(self, model_definition: LSTMModelDefinition, hw_device: str, learning_rate: float, scheduler_step_size: int):
         super().__init__()
 
         self.model_def = model_definition.to(hw_device)
@@ -83,7 +85,7 @@ class LSTMModel:
             gamma=0.1
         )
 
-    def learn(self, number_of_epochs, training_dataloader, testing_dataloader):
+    def learn(self, number_of_epochs: int, training_dataloader: DataLoader, testing_dataloader: DataLoader) -> None:
         for epoch in range(number_of_epochs):
             loss_train, learning_rate_train = self.run_epoch(training_dataloader, is_training=True)
             loss_test, learning_rate_test = self.run_epoch(testing_dataloader)
@@ -94,7 +96,7 @@ class LSTMModel:
         # Set the module in evaluation mode from here
         self.model_def.eval()
 
-    def run_epoch(self, dataloader, is_training=False):
+    def run_epoch(self, dataloader: DataLoader, is_training=False) -> Tuple[float, float]:
         epoch_loss = 0
 
         if is_training:
@@ -129,7 +131,7 @@ class LSTMModel:
 
     def make_predictions(self, data_loader):
         self.model_def.eval()
-        res = np.array([])
+        res: ndarray[float] = np.array([])
 
         for idx, (x, y) in enumerate(data_loader):
             x = x.to(self.hw_device)

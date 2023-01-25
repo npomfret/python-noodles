@@ -2,6 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.pyplot import figure
 from datetime import datetime, timedelta
+from numpy import ndarray
 
 CONFIG = {
     "xticks_interval": 90,  # show a date every 90 days
@@ -37,8 +38,8 @@ def plot_raw_prices(price_history):
 
 def plot_train_vs_test(lstm_data, price_history):
     # prepare data for plotting
-    to_plot_data_y_train = np.zeros(price_history.size())
-    to_plot_data_y_test = np.zeros(price_history.size())
+    to_plot_data_y_train: ndarray[float] = np.zeros(price_history.size())
+    to_plot_data_y_test: ndarray[float] = np.zeros(price_history.size())
 
     y_train_start = lstm_data.window_size
     y_train_end = lstm_data.split_index + lstm_data.window_size
@@ -72,8 +73,8 @@ def plot_train_vs_test(lstm_data, price_history):
 def plot_predictions_vs_actual(lstm_data, predicted_train, predicted_test, price_history):
     # prepare data for plotting
 
-    to_plot_data_y_train_pred = np.zeros(price_history.size())
-    to_plot_data_y_val_pred = np.zeros(price_history.size())
+    to_plot_data_y_train_pred: ndarray[float] = np.zeros(price_history.size())
+    to_plot_data_y_val_pred: ndarray[float] = np.zeros(price_history.size())
 
     to_plot_data_y_train_pred[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.unscale(predicted_train)
     to_plot_data_y_val_pred[lstm_data.split_index + lstm_data.window_size:] = lstm_data.unscale(predicted_test)
@@ -132,15 +133,15 @@ def plot_predict_unseen(lstm_data, predicted_val, unseen_prediction, price_histo
 
     # prepare plots
     plot_range = 10
-    to_plot_data_y_test = np.zeros(plot_range)
+    to_plot_data_y_test: ndarray[float] = np.zeros(plot_range)
     to_plot_data_y_test[:plot_range - 1] = lstm_data.unscale(lstm_data.data_y_test)[-plot_range + 1:]
     to_plot_data_y_test = np.where(to_plot_data_y_test == 0, None, to_plot_data_y_test)
     
-    to_plot_data_y_test_pred = np.zeros(plot_range)
+    to_plot_data_y_test_pred: ndarray[float] = np.zeros(plot_range)
     to_plot_data_y_test_pred[:plot_range - 1] = lstm_data.unscale(predicted_val)[-plot_range + 1:]
     to_plot_data_y_test_pred = np.where(to_plot_data_y_test_pred == 0, None, to_plot_data_y_test_pred)
     
-    to_plot_data_y_unseen_pred = np.zeros(plot_range)
+    to_plot_data_y_unseen_pred: ndarray[float] = np.zeros(plot_range)
     to_plot_data_y_unseen_pred[plot_range - 1] = lstm_data.unscale(unseen_prediction)
     to_plot_data_y_unseen_pred = np.where(to_plot_data_y_unseen_pred == 0, None, to_plot_data_y_unseen_pred)
 

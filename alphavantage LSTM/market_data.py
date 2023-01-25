@@ -1,6 +1,7 @@
 import numpy as np
 from alpha_vantage.timeseries import TimeSeries
 from PriceHistory import PriceHistory
+from typing import List
 
 CONFIG = {
     "key": "YOUR_API_KEY",  # Claim your free API key here: https://www.alphavantage.co/support/#api-key
@@ -9,21 +10,16 @@ CONFIG = {
 }
 
 
-def download_price_history(symbol):
-    api_key = CONFIG["key"]
-    outputsize = CONFIG["outputsize"]
+def download_price_history(symbol: str):
+    ts = TimeSeries(key=(CONFIG["key"]))
 
-    ts = TimeSeries(key=api_key)
+    json_data, *_ = ts.get_daily_adjusted(symbol, outputsize=(CONFIG["outputsize"]))
 
-    json_data, *_ = ts.get_daily_adjusted(symbol, outputsize=outputsize)
-
-    dates = list(json_data.keys())
+    dates: List[str] = list(json_data.keys())
     dates.reverse()
 
     close_col_name = CONFIG["key_adjusted_close"]
-    adjusted_close_prices = [float(json_data[date][close_col_name]) for date in json_data.keys()]
+    adjusted_close_prices: List[float] = [float(json_data[date][close_col_name]) for date in json_data.keys()]
     adjusted_close_prices.reverse()
-    adjusted_close_prices = np.array(adjusted_close_prices)
 
-    return PriceHistory(symbol, dates, adjusted_close_prices)
-
+    return PriceHistory(symbol, dates, np.array(adjusted_close_prices))
