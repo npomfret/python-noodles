@@ -44,8 +44,12 @@ def plot_train_vs_test(lstm_data, price_history):
     to_plot_data_y_train = np.zeros(price_history.size())
     to_plot_data_y_test = np.zeros(price_history.size())
 
-    to_plot_data_y_train[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.unscale(lstm_data.data_y_train)
-    to_plot_data_y_test[lstm_data.split_index + lstm_data.window_size:] = lstm_data.unscale(lstm_data.data_y_test)
+    y_train_start = lstm_data.window_size
+    y_train_end = lstm_data.split_index + lstm_data.window_size
+    to_plot_data_y_train[y_train_start:y_train_end] = lstm_data.unscale(lstm_data.data_y_train)
+
+    y_test_start = y_train_end
+    to_plot_data_y_test[y_test_start:] = lstm_data.unscale(lstm_data.data_y_test)
 
     to_plot_data_y_train = np.where(to_plot_data_y_train == 0, None, to_plot_data_y_train)
     to_plot_data_y_test = np.where(to_plot_data_y_test == 0, None, to_plot_data_y_test)
@@ -54,9 +58,9 @@ def plot_train_vs_test(lstm_data, price_history):
     fig = figure(figsize=(25, 5), dpi=80)
     fig.patch.set_facecolor((1.0, 1.0, 1.0))
     plt.plot(price_history.dates, to_plot_data_y_train, label="Prices (train)", color=CONFIG["color_train"])
-    plt.plot(price_history.dates, to_plot_data_y_test, label="Prices (validation)", color=CONFIG["color_val"])
+    plt.plot(price_history.dates, to_plot_data_y_test, label="Prices (testing)", color=CONFIG["color_val"])
 
-    title = "Daily close prices for " + price_history.symbol + " - showing training and validation data"
+    title = "Daily close prices for " + price_history.symbol + " - showing training and testing data"
 
     ticks_interval = CONFIG["xticks_interval"]
     xticks = [price_history.dates[i] if ((i % ticks_interval == 0 and (price_history.size() - i) > ticks_interval) or i == price_history.size() - 1) else None for i in range(price_history.size())]  # make x ticks nice

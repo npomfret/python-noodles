@@ -17,10 +17,14 @@ class LSTMData:
 
     def training_dataloader(self, batch_size, shuffle=True):
         dataset = TimeSeriesDataset(self.data_x_train, self.data_y_train)
+        print(f'Train data shape, x: {dataset.x.shape}, y: {dataset.y.shape}')
+
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
     def testing_dataloader(self, batch_size, shuffle=True):
         dataset = TimeSeriesDataset(self.data_x_test, self.data_y_test)
+        print(f'Testing data shape, x: {dataset.x.shape}, y: {dataset.y.shape}')
+
         return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
     def plot(self, price_history):
