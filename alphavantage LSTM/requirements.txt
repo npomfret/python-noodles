@@ -1,0 +1,6 @@
+numpy
+torch
+alpha_vantage
+matplotlib
+typing
+nptyping
