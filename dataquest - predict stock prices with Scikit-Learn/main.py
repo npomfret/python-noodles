@@ -1,4 +1,3 @@
-import env
 import yfinance as yf
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import precision_score

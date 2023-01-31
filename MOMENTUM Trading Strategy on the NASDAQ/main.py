@@ -1,19 +1,43 @@
+# see https://www.youtube.com/watch?v=bUejGzheCac
+
+import io
 import pandas as pd
 import yfinance as yf
 import numpy as np
 import requests_cache
 from matplotlib import pyplot as plt
+from _secrets_ import EODHISTORICALDATA_API_KEY
 
-# https://www.youtube.com/watch?v=bUejGzheCac
-
-session = requests_cache.CachedSession('cache/yfinance.cache')
+session = requests_cache.CachedSession('cache/http-cache', backend='filesystem')
 session.headers['User-agent'] = 'my-program/1.0'
+print(session.cache.cache_dir)
 
-ticker_df = pd.read_html("https://en.wikipedia.org/wiki/Nasdaq-100")[4]
-tickers = ticker_df["Ticker"].to_list()
+def get_all_symbols(exchange_code):
+    # exchange can be: 'US', NYSE', 'NASDAQ', 'BATS', 'OTCQB', 'PINK', 'OTCQX', 'OTCMKTS', 'NMFQS', 'NYSE MKT','OTCBB', 'OTCGREY', 'BATS', 'OTC'
+    response = session.get(f'https://eodhistoricaldata.com/api/exchange-symbol-list/{exchange_code}?api_token={EODHISTORICALDATA_API_KEY}&delisted=1')
+    print(response.status_code)
+
+    df = pd.read_csv(io.StringIO(response.content.decode('utf-8')))
+    return df['Code'].to_list()
+
+
+tickers = get_all_symbols('NASDAQ')
 print(tickers)
 
-df = yf.download(tickers, start='2010-01-01')['Adj Close']
+# ticker_df = pd.read_html("https://en.wikipedia.org/wiki/Nasdaq-100")[4]
+# tickers = ticker_df["Ticker"].to_list()
+# print(tickers)
+
+# print(si.tickers_nasdaq())
+start_date = '2000-01-01'
+cache_file = f'cache/dataframe.{start_date}.pkl'
+
+try:
+    df = pd.read_pickle(cache_file)
+except:
+    df = yf.download(tickers[0], start=start_date)['Adj Close']
+    df.to_pickle(cache_file)
+print(df)
 
 df = df.dropna(axis=1)
 print(df)
@@ -43,22 +67,42 @@ def get_top(date):
     top_30 = ret_6.loc[date, top_50].nlargest(30).index
     return ret_3.loc[date, top_30].nlargest(10).index
 
+
 def pf_performance(date):
     top_10 = get_top(date)
     portfolio = mtl.loc[date:, top_10][1:2]
     return portfolio.mean(axis=1).values[0]
 
 
-print(pf_performance('2010-12-31'))
-
-returns = []
+returns = {}
 for date in mtl.index[:-1]:
-    returns.append(pf_performance(date))
+    returns[date] = pf_performance(date)
 
-print(returns)
+returns_series = pd.Series(returns)
+print(returns_series)
 
-returns_series = pd.Series(returns, index=mtl.index[1:])
+# https://stackoverflow.com/questions/22607324/start-end-and-duration-of-maximum-drawdown-in-python
+def max_drawdown(series):
+    mdd = 0
+    mdd_index = ''
+    peak = series[0]
+    for i in series.index:
+        x = series[i]
+        if x > peak:
+            peak = x
+        dd = (peak - x) / peak
+        if dd > mdd:
+            mdd = dd
+            mdd_index = i
+    return [mdd_index, mdd]
+
 
 frame = returns_series.cumprod()
+
+print("max draw down:")
+print(max_drawdown(frame))
+
 plt.plot(frame)
+plt.ylabel('cumulative returns')
+plt.xlabel('time')
 plt.show()

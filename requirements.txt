@@ -4,3 +4,4 @@ alpha_vantage
 matplotlib
 typing
 nptyping
+pandas
