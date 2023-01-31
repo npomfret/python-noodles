@@ -5,3 +5,5 @@ matplotlib
 typing
 nptyping
 pandas
+yfinance
+scikit-learn
