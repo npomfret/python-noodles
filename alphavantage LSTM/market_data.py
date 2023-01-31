@@ -34,7 +34,7 @@ def download_price_history(symbol: str):
     adjusted_close_prices: List[float] = [float(json_data[date][close_col_name]) for date in json_data.keys()]
     adjusted_close_prices.reverse()
 
-    prices: NDArray[Shape["*"], Float] = np.array(adjusted_close_prices)
-    assert_isinstance(prices, NDArray[Shape["*"], Float])
+    prices: NDArray = np.array(adjusted_close_prices)
+    assert_isinstance(prices, NDArray)
 
     return PriceHistory(symbol, dates, prices)

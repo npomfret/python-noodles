@@ -8,12 +8,12 @@ from plots import plot_train_vs_test
 class LSTMData:
     def __init__(self,
                  split_index: int,
-                 data_x_train: NDArray[Shape["*, *"], Float],
-                 data_x_test: NDArray[Shape["*, *"], Float],
-                 data_y_train: NDArray[Shape["*"], Float],
-                 data_y_test: NDArray[Shape["*"], Float],
+                 data_x_train: NDArray,
+                 data_x_test: NDArray,
+                 data_y_train: NDArray,
+                 data_y_test: NDArray,
                  scaler: Normalizer,
-                 data_x_unseen: NDArray[Shape["*"], Float],
+                 data_x_unseen: NDArray,
                  window_size: int):
         self.split_index = split_index
         self.data_x_train = data_x_train
@@ -39,7 +39,7 @@ class LSTMData:
     def plot(self, price_history) -> None:
         plot_train_vs_test(price_history, self)
 
-    def unscale(self, data: NDArray[Shape["*"], Float]) -> NDArray[Shape["*"], Float]:
+    def unscale(self, data: NDArray) -> NDArray:
         return self.scaler.inverse_transform(data)
 
     def print_summary(self):

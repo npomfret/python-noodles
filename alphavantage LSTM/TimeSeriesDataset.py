@@ -6,7 +6,7 @@ from nptyping import NDArray, Shape, Float
 
 
 class TimeSeriesDataset(Dataset):
-    def __init__(self, x: NDArray[Shape["*"], Float], y: NDArray[Shape["*"], Float]):
+    def __init__(self, x: NDArray, y: NDArray):
         number_of_features = 1
         number_of_samples = len(x)
         if number_of_samples != len(y):

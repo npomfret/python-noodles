@@ -39,8 +39,8 @@ def plot_raw_prices(price_history):
 
 def plot_train_vs_test(price_history, lstm_data):
     # prepare data for plotting
-    to_plot_data_y_train: NDArray[Shape["*"], Float] = np.zeros(price_history.size())
-    to_plot_data_y_test: NDArray[Shape["*"], Float] = np.zeros(price_history.size())
+    to_plot_data_y_train: NDArray = np.zeros(price_history.size())
+    to_plot_data_y_test: NDArray = np.zeros(price_history.size())
 
     y_train_start = lstm_data.window_size
     y_train_end = lstm_data.split_index + lstm_data.window_size
@@ -71,11 +71,11 @@ def plot_train_vs_test(price_history, lstm_data):
     plt.show()
 
 
-def plot_predictions_vs_actual(price_history, lstm_data, predicted_train: NDArray[Shape["*"], Float], predicted_test: NDArray[Shape["*"], Float]):
+def plot_predictions_vs_actual(price_history, lstm_data, predicted_train: NDArray, predicted_test: NDArray):
     # prepare data for plotting
 
-    to_plot_data_y_train_pred: NDArray[Shape["*"], Float] = np.zeros(price_history.size())
-    to_plot_data_y_val_pred: NDArray[Shape["*"], Float] = np.zeros(price_history.size())
+    to_plot_data_y_train_pred: NDArray = np.zeros(price_history.size())
+    to_plot_data_y_val_pred: NDArray = np.zeros(price_history.size())
 
     to_plot_data_y_train_pred[lstm_data.window_size:lstm_data.split_index + lstm_data.window_size] = lstm_data.unscale(predicted_train)
     to_plot_data_y_val_pred[lstm_data.split_index + lstm_data.window_size:] = lstm_data.unscale(predicted_test)
@@ -102,7 +102,7 @@ def plot_predictions_vs_actual(price_history, lstm_data, predicted_train: NDArra
     plt.show()
 
 
-def plot_predictions_vs_actual_zoomed(price_history, lstm_data, predicted_val: NDArray[Shape["*"], Float]):
+def plot_predictions_vs_actual_zoomed(price_history, lstm_data, predicted_val: NDArray):
     dates: List[str] = price_history.dates
 
     ticks_interval = CONFIG["xticks_interval"]
@@ -129,22 +129,22 @@ def plot_predictions_vs_actual_zoomed(price_history, lstm_data, predicted_val: N
     plt.show()
 
 
-def plot_predict_unseen(price_history, lstm_data, predicted_val: NDArray[Shape["*"], Float], unseen_prediction: [(Any, 1)]):
+def plot_predict_unseen(price_history, lstm_data, predicted_val: NDArray, unseen_prediction: [(Any, 1)]):
     date_object = datetime.strptime(price_history.last_date(), "%Y-%m-%d")
     next_day = date_object + timedelta(days=1)
     next_day_string = next_day.strftime("%Y-%m-%d")
 
     # prepare plots
-    plot_range = 10
-    to_plot_data_y_test: NDArray[Shape["*"], Float] = np.zeros(plot_range)
+    plot_range = 25
+    to_plot_data_y_test: NDArray = np.zeros(plot_range)
     to_plot_data_y_test[:plot_range - 1] = lstm_data.unscale(lstm_data.data_y_test)[-plot_range + 1:]
     to_plot_data_y_test = np.where(to_plot_data_y_test == 0, None, to_plot_data_y_test)
 
-    to_plot_data_y_test_pred: NDArray[Shape["*"], Float] = np.zeros(plot_range)
+    to_plot_data_y_test_pred: NDArray = np.zeros(plot_range)
     to_plot_data_y_test_pred[:plot_range - 1] = lstm_data.unscale(predicted_val)[-plot_range + 1:]
     to_plot_data_y_test_pred = np.where(to_plot_data_y_test_pred == 0, None, to_plot_data_y_test_pred)
 
-    to_plot_data_y_unseen_pred: NDArray[Shape["*"], Float] = np.zeros(plot_range)
+    to_plot_data_y_unseen_pred: NDArray = np.zeros(plot_range)
     to_plot_data_y_unseen_pred[plot_range - 1] = lstm_data.unscale(unseen_prediction)
     to_plot_data_y_unseen_pred = np.where(to_plot_data_y_unseen_pred == 0, None, to_plot_data_y_unseen_pred)
 

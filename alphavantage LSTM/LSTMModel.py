@@ -69,7 +69,7 @@ class LSTMModel:
 
         return epoch_loss, learning_rate
 
-    def make_prediction(self, x_tensor: Tensor) -> NDArray[Shape["*"], Float]:
+    def make_prediction(self, x_tensor: Tensor) -> NDArray:
         self.model_def.eval()
 
         x_tensor = x_tensor.to(self.hw_device)
@@ -77,14 +77,14 @@ class LSTMModel:
 
         return out.cpu().detach().numpy()
 
-    def make_predictions(self, data_loader: DataLoader) -> NDArray[Shape["*"], Float]:
-        results: NDArray[Shape["*"], Float] = np.array([])
+    def make_predictions(self, data_loader: DataLoader) -> NDArray:
+        results: NDArray = np.array([])
 
         for idx, (x_tensor, *_) in enumerate(data_loader):
-            result: NDArray[Shape["*"], Float] = self.make_prediction(x_tensor)
+            result: NDArray = self.make_prediction(x_tensor)
             results = np.concatenate((results, result))
 
         return results
 
-    def convert_1d_row_to_tensor(self, x: NDArray[Shape["*"], Float]):
+    def convert_1d_row_to_tensor(self, x: NDArray):
         return torch.tensor(x).float().to(self.hw_device).unsqueeze(0).unsqueeze(2)

@@ -64,13 +64,13 @@ model.learn(
 training_dataloader: DataLoader = lstm_data.training_dataloader(batch_size, shuffle=False)
 testing_dataloader: DataLoader = lstm_data.testing_dataloader(batch_size, shuffle=False)
 
-predicted_train: NDArray[Shape["*"], Float] = model.make_predictions(training_dataloader)
-predicted_test: NDArray[Shape["*"], Float] = model.make_predictions(testing_dataloader)
+predicted_train: NDArray = model.make_predictions(training_dataloader)
+predicted_test: NDArray = model.make_predictions(testing_dataloader)
 
 plot_predictions_vs_actual(price_history, lstm_data, predicted_train, predicted_test)
 plot_predictions_vs_actual_zoomed(price_history, lstm_data, predicted_test)
 
 # predict the closing price of the next trading day
 x: Tensor = model.convert_1d_row_to_tensor(lstm_data.data_x_unseen)  # this is the data type and shape required, [batch, sequence, feature]
-prediction: NDArray[Shape["*"], Float] = model.make_prediction(x)
+prediction: NDArray = model.make_prediction(x)
 plot_predict_unseen(price_history, lstm_data, predicted_test, prediction)

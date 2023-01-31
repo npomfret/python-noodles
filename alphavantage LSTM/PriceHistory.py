@@ -7,7 +7,7 @@ from typing import List, Any
 from nptyping import NDArray, Shape, Float
 
 
-def create_windowed_data(x: NDArray[Shape["*"], Float], window_size: int) -> NDArray[Shape["*, *"], Float]:
+def create_windowed_data(x: NDArray, window_size: int) -> NDArray:
     assert len(x.shape) == 1
 
     number_of_observations = x.shape[0]
@@ -34,7 +34,7 @@ def create_windowed_data(x: NDArray[Shape["*"], Float], window_size: int) -> NDA
     assert windowed_data.shape[0] == number_of_output_rows
     assert windowed_data.shape[1] == window_size
     assert_isinstance(windowed_data, NDArray[Shape[f"{number_of_output_rows}, {window_size}"], Float])
-    assert_isinstance(windowed_data, NDArray[Shape["*, *"], Float])
+    assert_isinstance(windowed_data, NDArray)
 
     return windowed_data
 
@@ -65,20 +65,20 @@ class PriceHistory:
 
     def to_lstm_data(self, split_ratio: float, window_size: int) -> LSTMData:
         scaler = Normalizer()
-        normalized_prices: NDArray[Shape["*"], Float] = scaler.fit_transform(self.prices)
+        normalized_prices: NDArray = scaler.fit_transform(self.prices)
 
-        data_x: NDArray[Shape["*, *"], Float] = create_windowed_data(normalized_prices, window_size)
+        data_x: NDArray = create_windowed_data(normalized_prices, window_size)
 
         # discard the last row as we don't know what the y value is (because it's in the future)
-        data_x_unseen: NDArray[Shape["*"], Float] = data_x[-1]
-        data_x: NDArray[Shape["*, *"], Float] = data_x[:-1]
+        data_x_unseen: NDArray = data_x[-1]
+        data_x: NDArray = data_x[:-1]
 
         # sanity check
-        assert_isinstance(data_x_unseen, NDArray[Shape["*"], Float])
+        assert_isinstance(data_x_unseen, NDArray)
         assert_isinstance(data_x_unseen, NDArray[Shape[f"{window_size}"], Float])
 
         # we just use the next day as label, starting at index 'window_size'
-        data_y: NDArray[Shape["*"], Float] = normalized_prices[window_size:]
+        data_y: NDArray = normalized_prices[window_size:]
 
         # sanity check that x and y are of equal length (after we dropped the last row from x above)
         if len(data_x) != len(data_y):
@@ -87,11 +87,11 @@ class PriceHistory:
         # split dataset: early stuff for training, later stuff for testing
         split_index: int = int(data_y.shape[0] * split_ratio)
 
-        data_x_train: NDArray[Shape["*, *"], Float] = data_x[:split_index]
-        data_y_train: NDArray[Shape["*"], Float] = data_y[:split_index]
+        data_x_train: NDArray = data_x[:split_index]
+        data_y_train: NDArray = data_y[:split_index]
 
-        data_x_test: NDArray[Shape["*, *"], Float] = data_x[split_index:]
-        data_y_test: NDArray[Shape["*"], Float] = data_y[split_index:]
+        data_x_test: NDArray = data_x[split_index:]
+        data_y_test: NDArray = data_y[split_index:]
 
         return LSTMData(
             split_index,

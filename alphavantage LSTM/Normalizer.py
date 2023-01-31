@@ -7,7 +7,7 @@ class Normalizer:
         self._mean = None
         self._sd = None
 
-    def fit_transform(self, x: NDArray[Shape["*"], Float]) -> NDArray[Shape["*"], Float]:
+    def fit_transform(self, x: NDArray) -> NDArray:
         assert len(x.shape) == 1
 
         self._mean = np.mean(x, axis=0, keepdims=True)
@@ -15,5 +15,5 @@ class Normalizer:
 
         return (x - self._mean) / self._sd
 
-    def inverse_transform(self, x: NDArray[Shape["*"], Float]) -> NDArray[Shape["*"], Float]:
+    def inverse_transform(self, x: NDArray) -> NDArray:
         return (x * self._sd) + self._mean
