@@ -32,7 +32,7 @@ price_history: PriceHistory = download_price_history(symbol)
 print(f'Loaded {price_history.size()} data points for {symbol}, from {price_history.first_date()} to {price_history.last_date()}')
 price_history.plot()
 
-price_history = price_history.slice(-1000, price_history.size())
+price_history = price_history.slice(-1500, price_history.size())
 print(f'Loaded {price_history.size()} data points for {symbol}, from {price_history.first_date()} to {price_history.last_date()}')
 price_history.plot()
 
