@@ -46,6 +46,8 @@ class LSTMModelDefinition(nn.Module):
 
         # layer 1
         tensor_1 = self.linear_1(tensor)
+
+        # apply activation function
         tensor_2 = self.relu(tensor_1)
 
         # LSTM layer
