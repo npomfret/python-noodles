@@ -1,15 +1,16 @@
 import torch
 import numpy as np
 
-x = torch.tensor(np.array([3., 4.]), requires_grad=True)
-print(f'x: {x}')
+x = torch.tensor(1.0)
+y = torch.tensor(2.0)
 
-y_ = x * 2
-y = y_ * 5
-print(f'y: {y}')
+w = torch.tensor(1.0, requires_grad=True)
 
-z = y.mean()
-print(f'z (mean): {z}')
+y_hat = w * x
+loss = (y_hat - y) ** 2
 
-z.backward()
-print(f'x grad: {x.grad}')
+print(loss)
+
+loss.backward()
+
+print(w.grad)
