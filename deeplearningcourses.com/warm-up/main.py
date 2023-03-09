@@ -29,7 +29,7 @@ def as_histogram():
     plt.show()
 
 
-def as_scatter_plot():
+def make_scatter_plot_with_trend():
     # Generate normally distributed random values
     noise = np.random.normal(scale=0.2, size=1000)
 
@@ -59,6 +59,51 @@ def as_scatter_plot():
     plt.show()
 
 
-as_scatter_plot()
+def generate_trend_and_show_cumulative_sum():
+    # Generate normally distributed random values
+    #  need a large scale here else we don't get a 'nice' plot
+    noise = np.random.normal(scale=20, size=1000)
+
+    # Generate linearly increasing component
+    trend = np.linspace(0, 1, 1000)
+
+    # Combine noise and trend to generate samples
+    samples = (0.5 + trend + noise) - trend.mean()
+
+    # Plot the samples as a scatter plot
+    plt.scatter(range(1000), samples)
+
+    # Find the line of best fit
+    slope, intercept = np.polyfit(range(1000), samples, 1)
+    line = slope * np.arange(1000) + intercept
+
+    # Plot the line of best fit
+    plt.plot(line, color='red')
+
+    # Add title and axis labels
+    plt.title('1000 Samples with an Upward Trend and a Mean of Zero')
+    plt.xlabel('Sample Index')
+    plt.ylabel('Value')
+
+    # Display the plot
+    plt.show()
+
+    # Calculate the cumulative sum of the samples
+    cumulative_sum = np.cumsum(samples)
+
+    # Plot the cumulative sum
+    plt.plot(cumulative_sum)
+
+    # Add title and axis labels
+    plt.title('Cumulative Sum of 1000 Samples with an Upward Trend and a Mean of Zero')
+    plt.xlabel('Sample Index')
+    plt.ylabel('Cumulative Sum')
+
+    # Display the plot
+    plt.show()
+
+
+generate_trend_and_show_cumulative_sum()
+# make_scatter_plot_with_trend()
 # as_time_series()
 # as_histogram()
