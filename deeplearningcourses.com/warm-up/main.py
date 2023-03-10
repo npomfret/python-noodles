@@ -103,7 +103,23 @@ def generate_trend_and_show_cumulative_sum():
     plt.show()
 
 
-generate_trend_and_show_cumulative_sum()
+def exercise_4():
+    global mean, cov
+    mean = [0, 0]
+    cov = [[1, -0.5], [-0.5, 2]]
+    # Generate 1000 samples from multivariate normal distribution
+    samples = np.random.multivariate_normal(mean, cov, 1000)
+    # Plot samples
+    plt.scatter(samples[:, 0], samples[:, 1], s=5)
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('1000 Samples from a Multivariate Normal Distribution')
+    plt.show()
+
+
+exercise_4()
+
+# generate_trend_and_show_cumulative_sum()
 # make_scatter_plot_with_trend()
 # as_time_series()
 # as_histogram()
