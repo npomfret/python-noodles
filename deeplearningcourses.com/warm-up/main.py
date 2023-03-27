@@ -104,17 +104,29 @@ def generate_trend_and_show_cumulative_sum():
 
 
 def exercise_4():
-    global mean, cov
     mean = [0, 0]
-    cov = [[1, -0.5], [-0.5, 2]]
-    # Generate 1000 samples from multivariate normal distribution
+    cov = [[1, 0.5], [0.5, 1]]
+
+    # Generate 1000 samples from the multivariate normal distribution
     samples = np.random.multivariate_normal(mean, cov, 1000)
-    # Plot samples
-    plt.scatter(samples[:, 0], samples[:, 1], s=5)
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('1000 Samples from a Multivariate Normal Distribution')
-    plt.show()
+
+    # Calculate the sample mean
+    sample_mean = np.zeros(2)
+    for i in range(1000):
+        sample_mean += samples[i]
+    sample_mean /= 1000
+
+    # Calculate the sample covariance
+    sample_covariance = np.zeros((2, 2))
+    for i in range(1000):
+        x = samples[i] - sample_mean
+        sample_covariance += np.outer(x, x)
+    sample_covariance /= 999
+
+    # Print the sample mean and sample covariance
+    print('Sample mean: ', sample_mean)
+    print('Sample covariance: ')
+    print(sample_covariance)
 
 
 exercise_4()
